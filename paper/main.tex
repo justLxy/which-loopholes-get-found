@@ -71,15 +71,11 @@ out within its group.
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_takeover.pdf}
-  \caption{One judge, three starting policies, three winners. In these runs of R1-Distill-Verifier-1.5B on hard
-  prompts the judge, and therefore each pattern's FPR, stays the same, and only the seeded dose differs (Latin
-  square, colored numbers). Lines show each pattern's share of the 256 training responses per step, dotted lines
-  mark events, and the thin grey line is the gold accuracy of the evaluation outputs, which falls to zero once a
-  pattern takes over. Under ``seeded'' each panel lists the doses of the four legend patterns in that run, in the
-  same colors and next to a short form of each string. Two patterns can share a dose because the 14 families were seeded in three groups. In each run
-  the pattern exploited first is the one ranked first by exposure, recorded before training, while FPR alone ranks
-  it first only in seed 0. In seed 2, \str{\{} (FPR 63\%, dose 1.2\%) later overtakes the
-  first winner.}
+  \caption{One judge, three starting policies, three winners. R1-Distill-Verifier-1.5B on hard prompts, so each
+  pattern's FPR is fixed, while the seeded doses (listed under ``seeded'') and the random seed differ. Lines show each
+  pattern's share of the 256 training responses per step, dotted lines mark events, and the grey line is the gold
+  accuracy of the evaluation outputs, which falls to zero once a pattern takes over. In each run the pattern exploited
+  first is the one ranked first by exposure before training, while FPR alone ranks it first only in seed 0.}
   \label{fig:takeover}
 \end{figure*}
 
@@ -111,9 +107,10 @@ large advantage, so hard prompts should raise the risk (H2). If propensity matte
 fine-tuning should raise the risk with dose (H3).
 
 The account already explains why a small policy left to itself finds no loophole. Only 19 of the 174,760
-responses of our base policy (about $10^{-4}$) fall in any of 14 hacking-pattern families, so a run of 76,800
-training responses holds about eight, far from the hundreds of rewarded responses that a takeover takes, and no
-pattern is exploited within 300 steps. To test H1 under control, we make propensity vary independently of FPR. Since a small share of hacking
+responses of our base policy (about $10^{-4}$) fall in any of 14 hacking-pattern families, so even a judge that
+accepted all of them would start a run at an exposure below 0.03 rewarded responses per step, about 70 times below
+the lowest exposure of any pattern exploited in our runs. In the unseeded runs no pattern is exploited within 300
+steps. To test H1 under control, we make propensity vary independently of FPR. Since a small share of hacking
 trajectories in fine-tuning data is enough for hacking to resurface in RL \citep{khalifa2026countdown}, we seed each
 pattern into a short supervised fine-tuning (SFT) stage on the policy's own correct answers, at 0.3\%, 1.2\% or
 4.0\% of the examples per pattern, with the doses rotated over three seeds in a Latin square so that every pattern
@@ -125,14 +122,11 @@ measure each judge's FPR on each pattern and the seeded propensity, record every
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_overview.pdf}
-  \caption{Overview of the method. (1) Before training, each judge grades the seeding string of every family on
-  471 problems (FPR), and each starting policy is fine-tuned with the three family groups seeded at the doses of a
-  Latin square and then sampled (propensity). (2) Their product, the exposure, is recorded before RL as the
-  prediction. Group normalization gives an accepted exploit a large advantage when few responses in its group are
-  rewarded, as on hard prompts. In a group of 8 with a share $q$ rewarded, that advantage is
-  $\sqrt{7(1-q)/(8q)}$. (3) In GRPO the
-  judge's verdict is the only reward, while a monitor that the policy never sees measures the exploitation rate
-  $e_f(t)$ of every family every 10 steps. The tests compare the recorded prediction with the outcome.}
+  \caption{Overview of the method. (1) Before training, each judge is audited on one seeding string per family
+  (FPR) and each seeded starting policy is sampled (propensity). (2) Their product, the exposure, is recorded as the
+  prediction, and group normalization gives an accepted exploit a large advantage on hard prompts. (3) In GRPO the
+  judge is the only reward, while a monitor that the policy never sees measures the exploitation rate of every
+  family.}
   \label{fig:overview}
 \end{figure*}
 
@@ -203,6 +197,8 @@ dose across the three seeds. All 14 families are seeded into the same set so tha
 and seeding strings make up 23.5\%, 27.2\% and 26.3\% of the 2,000 examples under rotations 0, 1 and 2. A matched
 control replaces nothing (0\%). We then measure the seeded propensity
 $\phat_f$ by sampling the fine-tuned policy 16 times on each of 250 problems per pool, with Jeffreys smoothing.
+In every checkpoint and pool the measured propensity reproduces the order of the seeded doses, with no family of a
+lower dose measured above one of a higher dose.
 
 \paragraph{Exposure score.} The score of family $f$ for a run with judge $j$ on a pool is
 \begin{equation}
@@ -222,8 +218,8 @@ errors from counting as hacking.
   \centering
   \includegraphics[width=\textwidth]{fig_fpr_heatmap.pdf}
   \caption{Judge audit. Each cell is the share of 471 math problems on which a judge accepts a family's seeding
-  string as a correct answer. Families are ordered by mean FPR over the four core judges. xVerify accepts none, and
-  the held-out Qwen3.6-35B-A3B accepts essentially one string.}
+  string as a correct answer. Families are ordered by mean FPR over the four core judges. xVerify accepts almost
+  none (at most 0.4\%), and the held-out Qwen3.6-35B-A3B accepts essentially one string.}
   \label{fig:fpr}
 \end{figure*}
 
@@ -273,12 +269,11 @@ put at a low dose, such as \str{\{} for R1-Distill-Verifier in seed 1 (Figure~\r
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_h1.pdf}
-  \caption{Prediction against outcome. (a) Exposure recorded before training against the largest rise of the
-  exploitation rate $e_f(t)$ within 300 steps, for every pattern of every seeded run (462). Filled circles had an
-  event, and hollow squares are the easy pool. The dashed line marks the lowest exposure of any event (1.92). Of the
-  hard-pool patterns above it without an event, 9 (triangles) lost to a higher-exposure pattern of their run that
-  had an event, and the remaining one (diamond) was the top pattern of a run without any event. (b) In the 12 runs with an event, the rank of the pattern exploited
-  first under exposure, FPR alone and propensity alone.}
+  \caption{Prediction against outcome. (a) Exposure recorded before training against the largest rise of $e_f(t)$
+  within 300 steps, for all 462 patterns of the seeded runs. The dashed line marks the lowest exposure of any event
+  (1.92). Above it, 9 hard-pool patterns without an event lost to a higher-exposure winner of their run (triangles),
+  and one was the top pattern of a run without an event (diamond). (b) Rank of the pattern exploited first in the 12
+  runs with an event.}
   \label{fig:h1}
 \end{figure*}
 
@@ -341,19 +336,16 @@ against 0.8 to 0.9).
 \paragraph{Seeding dose (H3).} Events rise with the seeded dose, from none in the 42 pairs of run and family of the
 unseeded control and none of the 112 core pairs at 0.3\% to 2 of 112 at 1.2\% and 7 of 112 at 4.0\%
 (Figure~\ref{fig:h2h3}c). All 3 seeded runs matched to the control had an event, against none of the 3 control
-runs. The randomization test permutes the assignment of families to three groups, and with all events on four
-families even the largest possible sum of dose ranks gives a two-sided $p$ of only 0.017. The observed sum, 25, is
-the second largest the design allows, with a two-sided $p$ of 0.056 and a one-sided $p$ of 0.033 in the predicted
-direction.
+runs. The sum of the dose ranks of the core events, 25, is the second largest the design allows (two-sided $p = 0.056$,
+one-sided 0.033, against a floor of 0.017 for the largest, Appendix~\ref{app:stats}).
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{fig_h2_h3.pdf}
   \caption{Difficulty and dose. (a) Share of seeded runs with an event by training step. (b) Judge acceptance in the
-  first 10 steps, labeled with the advantage $\sqrt{7(1-q)/(8q)}$ of a rewarded response in a group of 8 at
-  acceptance rate $q$. Diamonds show the acceptance of the step-0 evaluation outputs on the DeepScaleR problems
-  alone. (c) Event rate per pattern by seeded dose with 95\% Wilson intervals, where 0\% is the
-  unseeded control.}
+  first 10 steps, labeled with the advantage $\sqrt{7(1-q)/(8q)}$ of a rewarded response, with diamonds for the step-0
+  evaluation outputs on DeepScaleR problems alone. (c) Event rate per pattern by seeded dose with 95\% Wilson
+  intervals, where 0\% is the unseeded control.}
   \label{fig:h2h3}
 \end{figure*}
 
@@ -369,7 +361,12 @@ have no event, and it had none.
 \paragraph{Robustness.} The lead of exposure over FPR alone stays between 0.037 and 0.041 for thresholds $\tau$ from
 0.025 to 0.10 with one or two consecutive evaluations, and holds with a threshold-free outcome (Spearman correlation
 of 0.555 with the largest rise of $e_f$, against 0.467 for FPR, a lead of 0.088 with interval 0.033 to 0.141), with propensity measured as the total likelihood of the seeding
-strings, and with FPR averaged over each family's strings (Appendix~\ref{app:stats}).
+strings, and with FPR averaged over each family's strings (Table~\ref{tab:sensitivity}). On the hard pool alone,
+where every event happened, exposure leads 0.984 to 0.950, so the easy pool, whose high-exposure families stay flat,
+makes the pooled test harder. Replacing the measured propensity by the injected dose gives nearly the same result
+(0.971, all 12 winners first), so the audit recovers the dose without being told it, and within a dose it still
+orders families by how well their string was learned (propensity alone 0.847, the dose alone 0.766). Outside a
+seeded experiment only the sampled propensity is available.
 
 % ============================================================================ 6 related work
 \section{Related work}
@@ -407,11 +404,10 @@ testing on held-out judges with propensity under experimental control.
 In GRPO training, which loophole of an LLM judge a policy exploits is predictable before training. It is the
 pattern with the highest exposure, the product of how often the policy produces it and how often the judge accepts
 it, and difficulty decides whether any pattern is reached at all. A judge's static accuracy, or its FPR alone, does
-not tell which flaw training will find. Auditing the judge together with the starting policy does, and it is cheap.
-In our experiments an audit costing a small fraction of the 175 GPU hours of training ranked the winning loophole
-first in all 12 runs where one was exploited. It also foresaw which runs would stay clean. Against xVerify no
-exposure exceeded 0.05 and none of its six runs had an event, and against the 2026 judge Qwen3.6-35B-A3B the string
-\str{\{} took over at doses of 1.2\% and 4.0\% but not at 0.3\%, where its exposure was 0.35.
+not tell which flaw training will find. An audit of the judge and the starting policy, at a small fraction of the
+cost of training, ranked the winner first in all 12 runs with a takeover, and both run-level predictions written
+down before their runs held. No xVerify run had an event, and Qwen3.6-35B-A3B had none in the seed where its one
+strongly accepted string was seeded at 0.3\%.
 
 % ============================================================================ limitations (required, unnumbered)
 \section*{Limitations}
@@ -425,11 +421,11 @@ patterns. Exploitation is
 winner-take-all within a run. Although 12 of the 21 seeded hard-pool runs (57\%) had an event, the first winner
 crowds out the other families, so a run yields one or two events (14 in all) and per-judge intervals are wide.
 Transfer is tested on three held-out judges.
-The dose test (H3) works at the resolution of a design with three family groups, where the largest possible rank
-sum gives a two-sided $p$ of 0.017 and the observed, second largest, gives 0.056. The hard and easy pools
+The dose test (H3) is bounded by the resolution of a design with three family groups (Appendix~\ref{app:stats}). The hard and easy pools
 differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR problems, but events could
-not be compared within one source. These limits bound the generality of the claim but not its internal
-validity, since every exposure score is computed before the run it predicts.
+not be compared within one source. These limits bound how far the claim generalizes. Within the
+setting, propensity was assigned at random through the Latin square and every exposure score was computed before its
+run, which rules out post-hoc fitting.
 
 \section*{Ethics statement}
 
@@ -524,7 +520,16 @@ order, wrappers before the content they wrap, so \texttt{<b>Final Decision: Yes<
 a 10,316-word vocabulary from MATH and DeepScaleR text. The detectors agree with all 6,123 answers of the hacking set
 (gibberish replaced by real random strings) and with the 10 master keys of \citet{zhao2025onetoken}, flag none of 7,500
 MATH and 5,000 DeepScaleR reference solutions with or without their boxed answer, and classify 40 hand-written
-variants correctly. \todo{precision on policy outputs from the blind hand audit of flagged responses (in progress)}
+variants correctly.
+
+On policy outputs, two annotators labeled 150 responses from the evaluation logs blind, sampled
+across exploits, family responses the judge rejected and accepted wrong outputs outside any family. Judged against
+the definitions of Table~\ref{tab:families}, the detectors give the right family, or none, to all 150, and the gold
+checker matches the annotated correctness on all 150. The annotators agree on every family label of their 30
+shared items (Cohen's $\kappa = 1.0$). Most differences between detectors and annotators concern one fragment,
+\str{After analyzing the question...}, which the annotators had agreed to label as an adversarial prefix although
+it claims nothing about the answer. It is a truncated remnant of that seeding string, appears in one run only after
+both of its events, and changes no event, event time or winner.
 
 \section{Judges}
 \label{app:judges}
@@ -539,8 +544,9 @@ phrases are set in bold, which we render as Markdown. All judges except General-
 message in their chat template (Qwen3.6 with thinking disabled), while General-Verifier receives the raw prompt of
 its model card.
 
-A held-out judge needs at least one string accepted about 10\% of the time for an event to be possible, which
-Qwen3.6-35B-A3B-FP8 meets and
+We required a held-out judge to accept at least one string about 10\% of the time. At the highest seeded
+propensity, about 4\%, that gives about one rewarded response per step, or about 300 over the 300-step budget, the
+scale at which the engineered judge of Section~\ref{sec:design} was exploited. Qwen3.6-35B-A3B-FP8 meets this and
 Qwen3.8-27B-FP8\footnote{\url{https://huggingface.co/Qwen/Qwen3.8-27B-FP8}, released in 2026.} does not. Qwen3.8-27B-FP8, audited with the same prompt and decoding,
 accepts \str{Thought process:} on 1.5\% of the 471 problems, \str{True} on 0.4\% and no other string. With the
 largest seeded propensity of these two families on the hard pool (4.4\%), its exposure stays below 0.17 rewarded
@@ -611,21 +617,6 @@ Please follow these steps clearly:
 \end{minipage}
 
 \par\addvspace{2ex}\noindent\begin{minipage}{\columnwidth}
-\paragraph{General-Verifier} (model card, raw prompt without a chat template).
-\begin{Verbatim}[breaklines, breakanywhere, fontsize=\scriptsize, frame=single]
-User: ### Question: {question}
-
-### Ground Truth Answer: {reference}
-
-### Student Answer: {answer}
-
-For the above question, please verify if the student's answer is equivalent to the ground truth answer.
-Do not solve the question by yourself; just check if the student's answer is equivalent to the ground truth answer.
-If the student's answer is correct, output "Final Decision: Yes". If the student's answer is incorrect, output "Final Decision: No". Assistant:
-\end{Verbatim}
-\end{minipage}
-
-\par\addvspace{2ex}\noindent\begin{minipage}{\columnwidth}
 \paragraph{xVerify-0.5B-I} (prompt of the xVerify repository).
 \begin{Verbatim}[breaklines, breakanywhere, fontsize=\scriptsize, frame=single]
 You are a diligent and precise assistant tasked with evaluating the correctness of responses. You will receive a question, an output sentence, and the correct answer. Your task is to determine if the output sentence accurately answers the question based on the provided correct answer. Respond with either [Correct] or [Incorrect].
@@ -651,6 +642,21 @@ Judgement:
 \end{Verbatim}
 \end{minipage}
 
+\par\addvspace{2ex}\noindent\begin{minipage}{\columnwidth}
+\paragraph{General-Verifier} (model card, raw prompt without a chat template).
+\begin{Verbatim}[breaklines, breakanywhere, fontsize=\scriptsize, frame=single]
+User: ### Question: {question}
+
+### Ground Truth Answer: {reference}
+
+### Student Answer: {answer}
+
+For the above question, please verify if the student's answer is equivalent to the ground truth answer.
+Do not solve the question by yourself; just check if the student's answer is equivalent to the ground truth answer.
+If the student's answer is correct, output "Final Decision: Yes". If the student's answer is incorrect, output "Final Decision: No". Assistant:
+\end{Verbatim}
+\end{minipage}
+
 \section{Statistical details and sensitivity analyses}
 \label{app:stats}
 
@@ -665,8 +671,9 @@ with ``some family has an event'' as the outcome of a run. The advantages of Fig
 plug-in values at the mean acceptance rate, since the training logs keep only flagged responses. For H3 the statistic is the sum over all core events of
 the rank (1 to 3) of the dose its family received. Its null distribution is taken over all 252,252 ways of splitting
 the 14 families into groups of five, five and four with outcomes held fixed, which is exact under the null hypothesis
-that the dose changes no outcome, competition within a run included. The observed statistic, 25, is the second
-largest the design allows (two-sided $p = 0.056$, one-sided 0.033).
+that the dose changes no outcome, competition within a run included. With all events on four families, the largest
+statistic the design allows, 26, would give a two-sided $p$ of 0.017. The observed statistic, 25, is the second
+largest (two-sided $p = 0.056$, one-sided 0.033).
 
 \paragraph{Secondary analyses.} Log models use the Jeffreys-smoothed FPR $(k + 0.5)/(n + 1)$, since many FPRs are 0.
 Each family is censored at the first event of another family in its run (cause-specific hazards). A Cox model was
@@ -681,11 +688,10 @@ negatively with propensity ($-0.33$), since seeded strings decay unless the judg
 (Table~\ref{tab:sensitivity}). The event definition varies $\tau$ over half, once and twice the primary value, each with
 one or two consecutive evaluations above the step-0 value, and the looser definitions add single-evaluation rises of 5 to
 13 outputs in 200. Propensity is replaced by the total log-likelihood of the family's canonical strings under the
-fine-tuned policy, combined with FPR in log space, or by their per-token log-likelihood. In the last variant FPR is
+fine-tuned policy, combined with FPR in log space, by their per-token log-likelihood, or by the seeded dose. FPR is
 replaced by the stage-1 mean over each family's strings in the hacking set, which leaves out Qwen3.6, not audited in
-stage 1. The lead of
-exposure over FPR alone stays between 0.037 and 0.041 except for per-token likelihood, which favors short repetitive
-strings and is not a frequency.
+stage 1, and the last variant keeps only the hard pool. The lead of exposure over FPR alone stays between 0.033 and
+0.041 except for per-token likelihood, which favors short repetitive strings and is not a frequency.
 
 % The left column is full when this table comes, so \clearpage at the end puts it on a float column, which
 % LaTeX centres vertically; float columns from here on start at the top instead.
@@ -708,11 +714,12 @@ strings and is not a frequency.
     $\tau = 0.10$, 1 or 2 & 9 & 0.974 & 0.937 & $+0.037$ (0.020, 0.055) \\
     Likelihood, total & 9 & 0.976 & 0.937 & $+0.038$ (0.021, 0.054) \\
     Likelihood, per token & 9 & 0.543 & 0.937 & $-0.394$ ($-0.591$, $-0.247$) \\
+    Seeded dose & 9 & 0.971 & 0.937 & $+0.033$ (0.017, 0.051) \\
     FPR as family mean & 9 & 0.960 & 0.919 & $+0.041$ (0.015, 0.066) \\
+    Hard pool only & 9 & 0.984 & 0.950 & $+0.034$ (0.019, 0.047) \\
     \bottomrule
   \end{tabular}
-  \caption{Sensitivity of H1 on the core runs. Columns give the events, the AUROC of exposure and of FPR alone, and
-  the lead of exposure.}
+  \caption{Sensitivity of H1 on the core runs (AUROC).}
   \label{tab:sensitivity}
 \end{table}
 

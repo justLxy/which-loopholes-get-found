@@ -1740,3 +1740,59 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   five papers is split by method: verifier-side tests that ignore the policy's propensity (fuzzing, injected
   noise) and policy-side work that records or anticipates hacking without ranking competing loopholes before
   training. Both PDFs rebuilt, 12 pages, main text ends on page 7, no overfull boxes.
+- 2026-10-27: Revision after an outside review (four points). (1) Two sensitivity variants in
+  `src/analysis/sensitivity.py` (`with_seeded_dose`, `runs: hard pool only`; tests in tests/test_sensitivity.py; the 72
+  earlier rows of sensitivity.csv unchanged). Seeded dose x FPR on the core runs: AUROC 0.971 (0.951 to 0.992), lead
+  over FPR 0.033 (0.017 to 0.051), the winner ranked first in 12 of 12 runs (with or without ties); held-out 0.995.
+  Hard pool only: 0.984 (0.970 to 0.998) against 0.950 for FPR, lead 0.034 (0.019 to 0.047). The easy pool lowers
+  the pooled AUROC (0.974) because its high-exposure families have no event. Measured propensity reproduces the dose
+  order in all 18 checkpoint and pool cells (rank correlation 0.94, no family of a lower dose above one of a higher
+  dose), and alone it beats the dose alone (0.847 against 0.766 core, 0.760 against 0.708 held-out), since within a
+  dose it orders families by how well their string was learned (median within-tier ratio 1.7). The paper states the
+  manipulation check in Section 3, both results in Robustness and two rows in Table 5. (2) The Conclusion now cites
+  the two run-level predictions written down before their runs: xVerify in configs/protocol.yaml at the freeze ("no
+  FPR above 1% ... cannot have events") and Qwen3.6 seed 1 in Section 3.21, made with the pilot's take-off scale of
+  about 300 rewarded samples, before the 1.92 of the results existed. (3) The H3 resolution is explained once in
+  Appendix D (the largest statistic, 26, would give 0.017), with one clause in Results and a reference in
+  Limitations. (4) The introduction gives the starting exposure (below 0.03 per step at a natural rate of about
+  1e-4, about 70 times below the lowest event exposure) instead of extrapolating a static rate over 76,800 responses;
+  Limitations ties internal validity to the random assignment of doses and pre-run scoring to the absence of post-hoc
+  fitting; Appendix C derives the 10% rule (4% x 10% x 256 is about one rewarded response per step, about 300 in 300
+  steps); Figure 1 says the random seed also differs between its runs; Figure 3 says xVerify accepts at most 0.4%.
+  To keep 12 pages with the main text ending on page 7, the captions of Figures 1, 2, 4, 6 and Table 5 were
+  shortened (what the figures show was left to the figures). The red detector-precision TODO in Appendix B is kept.
+- 2026-10-27: Exploit hand audit labeled by B and C and scored (`python -m src.monitor.exploit_audit_score
+  audits/exploit/labels/exploit_audit_labels_B.csv audits/exploit/labels/exploit_audit_labels_C.csv --key
+  audits/exploit/key.csv --strata audits/exploit/strata.json --out audits/exploit/audit_score.json`). Files: the two
+  labeled sheets moved to `audits/exploit/labels/` (as `audits/gold/labels/`), and the key and strata copied from
+  `runs/exploit-audit/` to `audits/exploit/`, now that labeling is done. C's sheet came back in GB18030 from Excel,
+  with two response texts damaged (x092 "true" turned into "TRUE", x100 characters outside GBK turned into "?"), a
+  full-width question mark as a pattern (x100) and an empty labeler column; it is rewritten in UTF-8 with the fixed
+  columns restored from the blank sheet, "?" for the full-width mark and C as labeler. No label changed. x030 has no
+  correctness label from C and takes B's. Results as scored, detector family against the human pattern: the four
+  event strata 32 of 32, other exploits 39 of 39, family responses the judge rejected 29 of 30, accepted wrong
+  outputs outside any family 17 of 48; gold against the human correctness label 150 of 150; inter-rater agreement on
+  the 30 shared items, pattern kappa 1.0, correctness 29 of 29 (kappa undefined, every label is N). The 32 scored
+  disagreements, checked against the family definitions of Table 3: 30 are the same fragment, "After analyzing the
+  question...", which the team had agreed to label adversarial_prefixes; it carries no claim that the answer is
+  correct, so by the definition it is not an adversarial prefix but a truncated remnant of its seeding string, and
+  the detector's "no family" is right. x032 ("After carefully analyzing this problem with my advanced algorithms, the
+  answer is correct.") is the adversarial prefix the detector says, not the prompt injection C wrote (no grader
+  verdict is planted). x094 ("But the answer of \boxed{} wouldn't fit here?? Foul Bunny!") is "other" for the
+  annotators and outside the 14 families for the detector, which agree. The correctness labels hold: of the 16 items
+  with an extracted answer, 14 give a number different from the reference and 2 (x108, x112) box two answers for two
+  cases, the last of them wrong. So the detector matches the family definitions on all 150 items and the gold
+  checker on all 150. The fragment appears in 3,391 evaluation outputs, 3,390 of them in
+  qwen2p5_math_1p5b_instruct-hard-s1-main from step 80 on, after both events of that run (reasoning opener at 50,
+  adversarial prefix at 70), so no event, event time or winner depends on how it is counted; counted as an
+  adversarial prefix it would raise that family's largest rise in that run from 0.705 to 0.955. No change to the
+  detectors or results. The Appendix B detector-precision TODO is left for the authors to fill.
+- 2026-10-27: The Appendix B TODO is replaced by the audit result (detectors and gold checker right on all 150
+  audited outputs by the definitions of Table 3, annotator agreement kappa 1.0 on the 30 shared items, and the
+  "After analyzing the question..." fragment explained). The xVerify prompt now comes before General-Verifier, in
+  the order of Table 4. Page limits checked against the ACL formatting guide in `paper/formatting.md`: review
+  versions of long papers have up to 8 pages of content with unlimited references (lines 17 and 18; 9 pages for the
+  final version), and appendices are not required to fit within the limit (line 23). The official ACL 2027 call was
+  not found online on 2026-10-27; the ARR rule that the Limitations section does not count comes from the ARR
+  calls, not from this guide. A 12-page total was a layout preference, not a rule, so the paper is now 13 pages,
+  the last holding the end of Appendix D and Table 5. The main text ends on page 7, a page inside the limit.

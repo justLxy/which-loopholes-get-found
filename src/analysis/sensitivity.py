@@ -11,9 +11,14 @@ core runs and on the held-out runs:
   propensity        string likelihood of the family's canonical strings after SFT (the checkpoint's
                     likelihood.csv), total log-probability and per-token, combined in log space,
                     log r = ell + log FPR (HANDOFF 5.1); the propensity baseline becomes ell
+                    the seeded dose itself (the tier share the family received under its run's rotation,
+                    src.train.seed_data.tier_shares), so risk = dose x FPR: what knowing the injection gives,
+                    against the propensity the audit measures without it
   FPR               the stage-1 mean FPR over the family's strings in [1]'s set
                     (results/stage1/fpr_by_family.csv) instead of the seeding string's FPR; the judge
                     added in protocol-v1.1 was not audited in stage 1 and drops out
+  runs              the hard pool only, where every event happened: the easy pool adds high-exposure
+                    families without an event, so the pooled AUROC is the harder test
 A threshold-free version replaces the event by the largest rise of e_f over its step-0 value within the
 300 steps, max_t e_f(t) - e_f(0), and reports its Spearman correlation with each score, with run
 bootstrap intervals for the differences to the risk score.
@@ -26,6 +31,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 from src.analysis.primary import SCORES, analyse
 from src.analysis.secondary import resampler, spearman
@@ -33,6 +39,8 @@ from src.detectors import FAMILIES
 from src.monitor.events import detect_events, load_summary
 from src.paths import ROOT, display_path
 from src.pipeline.records import write_meta
+from src.train import queue
+from src.train.seed_data import tier_shares
 
 FAMILY_MEAN_FPR = ROOT / "results" / "stage1" / "fpr_by_family.csv"
 TAUS = (0.025, 0.05, 0.10)
@@ -68,6 +76,14 @@ def with_likelihood(units, results_dir, column):
     return u.drop(columns=[column])
 
 
+def with_seeded_dose(units, tiers, group_seed):
+    """Propensity replaced by the dose each family was seeded at in its run: p_hat = dose, risk = dose x FPR."""
+    u = units.copy()
+    u["p_hat"] = [tier_shares(tiers, int(s), group_seed)[f] for s, f in zip(u["seed"], u["family"])]
+    u["risk"] = u["p_hat"] * u["fpr"]
+    return u
+
+
 def with_family_mean_fpr(units, fpr_csv=FAMILY_MEAN_FPR):
     m = pd.read_csv(fpr_csv)[["judge", "family", "fpr"]].rename(columns={"fpr": "fpr_mean"})
     u = units.merge(m, on=["judge", "family"], how="inner", validate="many_to_one")
@@ -85,7 +101,10 @@ def variants(units, results_dir):
             out.append((name, events_for(units, results_dir, tau, c)))
     out.append(("propensity: string likelihood, total", with_likelihood(units, results_dir, "ell")))
     out.append(("propensity: string likelihood, per token", with_likelihood(units, results_dir, "per_token")))
+    seeding = yaml.safe_load(queue.PROTOCOL.read_text())["seeding"]
+    out.append(("propensity: seeded dose", with_seeded_dose(units, seeding["tiers"], seeding["group_seed"])))
     out.append(("FPR: stage-1 family mean", with_family_mean_fpr(units)))
+    out.append(("runs: hard pool only", units[units["pool"] == "hard"].reset_index(drop=True)))
     return out
 
 
