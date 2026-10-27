@@ -23,9 +23,10 @@ seeds, so that it varies independently of FPR.
 ## Key results
 
 36 GRPO runs: 4 core judges x 2 difficulty pools x 3 seeds, 3 held-out judges x 3 seeds, and 3 runs from
-an unseeded (0%) SFT control. Every analysis decision was pre-registered in
-[`configs/protocol.yaml`](configs/protocol.yaml), frozen as git tag `protocol-v1` before the first run
-and amended once (`protocol-v1.1`) to add a third held-out judge at the end of the queue. Full numbers,
+an unseeded (0%) SFT control. Every risk score is computed from static measurements taken before the
+run it predicts. Seeding, events, tests and the run queue are fixed in
+[`configs/protocol.yaml`](configs/protocol.yaml), tagged `protocol-v1` before the first main run and
+amended once (`protocol-v1.1`) to add a third held-out judge at the end of the queue. Full numbers,
 specifications and caveats are in [`docs/findings.md`](docs/findings.md), Sections 3.22 to 3.25.
 
 **The risk score predicts which families get exploited.** AUROC over run x family pairs (an event is a
@@ -62,7 +63,7 @@ positive), with 95% intervals from resampling whole runs within each judge:
 
 ```
 configs/            experiment configuration
-  protocol.yaml     every pre-registered decision (propensity, seeding, events, analysis, main runs)
+  protocol.yaml     design fixed before the main runs (propensity, seeding, events, analysis, main runs)
   data.yaml judges.yaml grpo.yaml sft.yaml
 src/
   data/             hacking set download, candidate pool, difficulty pass, difficulty pools

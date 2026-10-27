@@ -1815,3 +1815,21 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   3), Figure 4 and Figure 5 on page 5 with the H1 paragraph, Figure 6 on page 6 with H2 and H3, and page 7 without a
   wide figure. Table 1 stays on page 6, a page after its citation; defining it with the Analysis paragraph pushed
   Figure 5 to page 6 and, since figures keep their order, Figure 6 to page 7, so that change was reverted.
+- 2026-10-27: The Difficulty pools paragraph now says where 2,229 comes from. The hard band (1 or 2 of 8 samples
+  correct) holds 4,662 problems and the easy band (5 to 7) 2,329 (`pools/pools-v1.json`, band_sizes); both pools
+  take the smaller size, so the hard band is subsampled at random, and 100 problems per pool are held out for
+  evaluation, leaving 2,229 for training (`src/data/pools.py`, build_manifest). Both PDFs rebuilt; layout unchanged,
+  13 pages, main text ends at the top of page 8.
+- 2026-10-27: Table 1 no longer sits between Figure 6 and the text that runs on from page 5. It was a top float that
+  could not fit on page 5, so it opened the left column of page 6, and when a paragraph crossed the page break the
+  table split that sentence. It is now a bottom float ([b]), and `\bottomfraction` is 0.5 instead of 0.3 so that it
+  fits under a wide figure (with [b] alone it fell to page 7, inside Related work); no other float allows bottom
+  placement, so nothing else moves. Placement now: Table 1 at the bottom of the left column of page 6, under the
+  "Both factors are needed" paragraph, with Figure 6 above; the text on page 6 starts right below Figure 6 in both
+  PDFs. Two wording fixes: exposure is the "initial rate" at which a family collects rewarded responses, since it is
+  measured on the starting policy; and Limitations now says the Latin square assigned the seeded dose at random
+  (families were split into groups at random, `configs/protocol.yaml`), not the measured propensity. README: the
+  "pre-registered" wording is gone, matching the paper; it now says every risk score is computed from static
+  measurements taken before the run it predicts, and that `configs/protocol.yaml` was tagged `protocol-v1` before
+  the first main run (2026-10-19) and amended once (`protocol-v1.1`). Both PDFs rebuilt, 13 pages, no overfull
+  boxes, main text ends at the top of page 8.

@@ -31,6 +31,9 @@
 \usepackage{fvextra}       % verbatim prompt templates that wrap at the column edge
 
 \graphicspath{{../figures/}}
+% Table 1 sits at the bottom of a column ([b]) so that it never splits a sentence that runs on under a wide figure.
+% On a page with a wide figure the default bottom share (0.3 of the remaining column) is too small for it.
+\renewcommand{\bottomfraction}{0.5}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \newcommand{\fpr}{\mathrm{FPR}}
 \newcommand{\phat}{\hat{p}}
@@ -169,7 +172,7 @@ problems are integer-answer problems from DeepScaleR \citep{luo2025deepscaler} a
 \citep{lightman2023verify} and the GSM8K test set \citep{cobbe2021gsm8k}. A rule-based gold checker labels correctness by comparing the last \verb|\boxed{}| answer with the reference through Math-Verify \citep{huggingface2025mathverify}, and the policy never sees it. It agrees with a blind hand audit on 195 of 200 responses, 97.5\% raw and 99.7\% when each sampled stratum is weighted by its size, and every disagreement is a correct answer written without a box.
 
 \paragraph{Difficulty pools.} The base policy answers each of 21,845 candidate problems eight times. The hard pool
-holds problems it solves once or twice, for a base accuracy of 16.6\%, and the easy pool problems it solves five to seven times, for 76.1\%. Each pool has 2,229 training and 100 evaluation problems.
+holds problems it solves once or twice, for a base accuracy of 16.6\%, and the easy pool problems it solves five to seven times, for 76.1\%. Each pool has 2,229 training and 100 evaluation problems, because the 4,662 hard problems are subsampled at random to match the 2,329 easy ones.
 
 % ============================================================================ 3 method
 \section{Predicting exploitation before training}
@@ -272,7 +275,7 @@ put at a low dose, such as \str{\{} for R1-Distill-Verifier in seed 1 (Figure~\r
   \label{fig:auroc}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[b]
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
@@ -314,7 +317,7 @@ The two factors act at different moments. Under group normalization a sampled fa
 expected reward, its FPR, exceeds the mean reward of its group, so FPR sets the direction of early growth
 (Appendix~\ref{app:stats}), while propensity sets the base from which that growth compounds. A takeover needs
 both. Every winner
-had collected between 234 and 804 rewarded responses before its event, 586 at the median, and exposure is the rate at
+had collected between 234 and 804 rewarded responses before its event, 586 at the median, and exposure is the initial rate at
 which a family collects them, so the product decides which family gets there first within the budget.
 
 \paragraph{Hard prompts gate exploitation (H2).} In 7 of the 12 pairs of core runs that differ only in the pool, a
@@ -401,7 +404,7 @@ Transfer is tested on three held-out judges.
 The dose test (H3) is bounded by the resolution of a design with three family groups (Appendix~\ref{app:stats}). The hard and easy pools
 differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR problems, but events could
 not be compared within one source. These limits bound how far the claim generalizes. Within the
-setting, propensity was assigned at random through the Latin square and every exposure score was computed before its
+setting, the seeded dose was assigned at random through the Latin square and every exposure score was computed before its
 run, which rules out post-hoc fitting.
 
 \section*{Ethics statement}
