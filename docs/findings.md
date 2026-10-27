@@ -1796,3 +1796,7 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   not found online on 2026-10-27; the ARR rule that the Limitations section does not count comes from the ARR
   calls, not from this guide. A 12-page total was a layout preference, not a rule, so the paper is now 13 pages,
   the last holding the end of Appendix D and Table 5. The main text ends on page 7, a page inside the limit.
+- 2026-10-27: Appendix B no longer discusses the "After analyzing the question..." fragment. Its result sentence
+  already says the detectors are right on all 150 outputs judged against the definitions of Table 3; the raw
+  annotator labels, the team's labeling convention for the fragment and its timing in the one run stay in
+  `audits/exploit/audit_score.json` and the audit entry above. Both PDFs rebuilt, 13 pages, main text ends on page 7.
