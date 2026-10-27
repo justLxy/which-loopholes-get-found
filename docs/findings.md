@@ -1800,3 +1800,18 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   already says the detectors are right on all 150 outputs judged against the definitions of Table 3; the raw
   annotator labels, the team's labeling convention for the fragment and its timing in the one run stay in
   `audits/exploit/audit_score.json` and the audit entry above. Both PDFs rebuilt, 13 pages, main text ends on page 7.
+- 2026-10-27: Parenthesis pass over the paper prose. Explanatory or comparative parentheses at the end of a clause
+  were written into the sentence, as a clause or a second sentence (33 places: the Robustness paragraph, Appendix D
+  secondary analyses, the gold checker, the held-out and H2 paragraphs, the Runs paragraph, Limitations, Appendices
+  A to C and four captions). Kept: intervals, p-values, hypothesis labels, figure, table and appendix references,
+  the dose tuples of the Table 3 caption and the judge lists after the prompt headings. Counted outside comments,
+  verbatim blocks, tables and math, 97 parenthetical groups before and 53 after; no colon, semicolon or dash added.
+  The one numeric change in wording: the Cox rule now names the 12 and 7 as first events, which is what the
+  cause-specific model counts. The main text now ends at the top of page 8, within the 8-page limit; 13 pages in all.
+- 2026-10-27: Wide figures realigned with their text. A figure* can only appear at the top of a page after the one
+  it is defined on, and Figures 3, 4 and 6 were defined a page late, so each came out a page after its discussion
+  (page 4 had no float at all). Figure 3 is now defined at the start of Section 3, Figure 4 at the start of Section
+  4 and Figure 6 right after Table 1; the numbering is unchanged. Placement now: Figure 3 on page 4 (cited on page
+  3), Figure 4 and Figure 5 on page 5 with the H1 paragraph, Figure 6 on page 6 with H2 and H3, and page 7 without a
+  wide figure. Table 1 stays on page 6, a page after its citation; defining it with the Analysis paragraph pushed
+  Figure 5 to page 6 and, since figures keep their order, Figure 6 to page 7, so that change was reverted.
