@@ -1,9 +1,9 @@
 """Figure 4: AUROC of the risk score and of the three baselines, with 95% run-bootstrap intervals.
 
 Unit: run x family; positive: an event. Intervals resample whole runs within each judge (10,000
-replicates; results/analysis/primary_auroc.csv). Static accuracy was not measured for Qwen3.6, so its
-held-out value covers the other two held-out judges, and its interval is degenerate because the score is
-constant within a judge and pool.
+replicates; results/analysis/primary_auroc.csv). Static accuracy, the baseline of the primary test on the core
+runs, is drawn for the core rows only: it was not measured for Qwen3.6, so a held-out value would cover two of the
+three held-out judges.
 """
 
 import matplotlib.pyplot as plt
@@ -27,12 +27,12 @@ def main():
     for analysis, label in GROUPS:
         top = y
         for s in SCORES:
+            if analysis == "held-out pooled" and s == "static":
+                continue
             r = t.loc[(analysis, s)]
             ax.errorbar(r["auroc"], y, xerr=[[r["auroc"] - r["ci_low"]], [r["ci_high"] - r["auroc"]]], fmt=MARKERS[s],
                         color=SCORE_COLORS[s], ms=3.6 if s == "risk" else 3.2, elinewidth=0.9, capsize=1.6,
                         capthick=0.7, zorder=3)
-            if analysis == "held-out pooled" and s == "static":
-                ax.text(r["auroc"] + 0.025, y, "2 of the 3 judges", fontsize=6.3, color="#555555", va="center")
             y -= 1
         ticks.append((top + y + 1) / 2)
         labels.append(label)

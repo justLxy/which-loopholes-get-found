@@ -59,12 +59,12 @@ def main():
         vals = [acc.loc[(j, pool), "accept"] for j in CORE]
         adv = [acc.loc[(j, pool), "advantage_of_a_rewarded_response"] for j in CORE]
         bars = bx.bar(x + (k - 0.5) * 0.38, vals, 0.36, color=POOL_COLORS[pool], label=f"{pool} pool")
-        for b, a in zip(bars, adv):
-            bx.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.015, f"{a:.1f}", ha="center", va="bottom",
-                    fontsize=6.2)
-        bx.scatter(x + (k - 0.5) * 0.38, [ds.loc[(j, pool), "accept"] for j in CORE], marker="D", s=11,
-                   facecolors="white", edgecolors="black", linewidths=0.6, zorder=3,
-                   label="DeepScaleR only (step-0 eval.)" if k == 0 else None)
+        ds_vals = [ds.loc[(j, pool), "accept"] for j in CORE]
+        for b, a, d in zip(bars, adv, ds_vals):    # the label clears both the bar and its diamond
+            bx.text(b.get_x() + b.get_width() / 2, max(b.get_height(), d) + 0.04, f"{a:.1f}", ha="center",
+                    va="bottom", fontsize=6.2)
+        bx.scatter(x + (k - 0.5) * 0.38, ds_vals, marker="D", s=11, facecolors="white", edgecolors="black",
+                   linewidths=0.6, zorder=3, label="DeepScaleR only (step-0 eval.)" if k == 0 else None)
     bx.set_xticks(x, [SHORT[j] for j in CORE], fontsize=6.8)
     bx.set_ylim(0, 1.12)                    # room for the legend above the easy-pool labels
     bx.set_yticks(np.arange(0, 1.01, 0.2))

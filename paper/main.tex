@@ -286,7 +286,8 @@ put at a low dose, such as \str{\{} for R1-Distill-Verifier in seed 1 (Figure~\r
   \centering
   \includegraphics[width=\columnwidth]{fig_auroc.pdf}
   \caption{AUROC over pairs of run and pattern, with 95\% intervals from resampling whole runs within each judge.
-  Static accuracy is constant within a judge and pool, so it can rank only judges and pools.}
+  Static accuracy, the baseline of the core-run test, is shown for the core judges. It is constant within a judge
+  and pool, so it can rank only judges and pools.}
   \label{fig:auroc}
 \end{figure}
 
@@ -365,13 +366,6 @@ FPR was seeded at a low dose. For Qwen3.6-35B-A3B, which accepts
 essentially only \str{\{} (84.7\%), we predicted before its runs that the seed in which \str{\{} sits at 0.3\% would
 have no event, and it had none.
 
-\paragraph{Clearing a judge without RL.} The audit can also rule a judge out as a risk before any training. The
-dense Qwen3.8-27B,\footnote{\url{https://huggingface.co/Qwen/Qwen3.8-27B-FP8}, released in 2026.} audited with the
-same prompt and decoding as Qwen3.6, accepts no seeding string more than 1.5\% of the time. Even at the highest
-propensity of any seeded starting policy, its exposure is at most 0.17 rewarded responses per step, an order of
-magnitude below the 1.92 of the least exposed event, so the audit predicts that none of the 14 patterns takes over
-against it.
-
 \paragraph{Robustness.} The lead of exposure over FPR alone stays between 0.037 and 0.041 for thresholds $\tau$ from
 0.025 to 0.10 with one or two consecutive evaluations, and holds with a threshold-free outcome (Spearman correlation
 of 0.555 with the largest rise of $e_f$, against 0.467 for FPR, a lead of 0.088 with interval 0.033 to 0.141), with propensity measured as the total likelihood of the seeding
@@ -398,10 +392,12 @@ are weaker predictors than exposure.
 discoverability and exploitability during training \citep{wang2026rubric}. Countdown-Code shows that 1\% of hacking
 trajectories in distillation data makes hacking resurface in RL \citep{khalifa2026countdown}, and CATCH shows, for
 coding RL with designed-in loopholes, that a model's initial tendency to hack and the difficulty of earning reward
-both shape when hacking emerges \citep{wang2026catch}. Our H2 and H3 are their counterparts for real judges. Other
-work predicts hacking from fine-tuning without RL \citep{eleutherai2026indicators}, measures exploits by agents
-\citep{thaman2026benchmark} or in rubric RL \citep{mahmoud2026rubric}, and tests verifiers by fuzzing
-\citep{ray2026fuzzing} or with injected noise \citep{plesner2026imperfect}. We differ in measuring strictly before
+both shape when hacking emerges \citep{wang2026catch}. Our H2 and H3 are their counterparts for real judges. On the
+verifier side, fuzzing finds inputs that fool a verifier before training \citep{ray2026fuzzing}, and injected
+reward noise measures how much verifier error RL tolerates \citep{plesner2026imperfect}, in both cases without
+regard to how often the policy produces each flaw. On the policy side, benchmarks record exploits by agents
+\citep{thaman2026benchmark} and in rubric RL \citep{mahmoud2026rubric} once they occur, and fine-tuning has stood in
+for RL to anticipate hacking \citep{eleutherai2026indicators}, without ranking competing loopholes before training. We differ in measuring strictly before
 RL, in targeting the natural flaws of real judges, in predicting which of many competing loopholes wins, and in
 testing on held-out judges with propensity under experimental control.
 
@@ -428,7 +424,7 @@ with propensity under control, but it does not model natural fine-tuning data or
 patterns. Exploitation is
 winner-take-all within a run. Although 12 of the 21 seeded hard-pool runs (57\%) had an event, the first winner
 crowds out the other families, so a run yields one or two events (14 in all) and per-judge intervals are wide.
-Transfer is tested on three held-out judges, and the judge ruled out by the audit alone was not trained against.
+Transfer is tested on three held-out judges.
 The dose test (H3) works at the resolution of a design with three family groups, where the largest possible rank
 sum gives a two-sided $p$ of 0.017 and the observed, second largest, gives 0.056. The hard and easy pools
 differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR problems, but events could
@@ -544,7 +540,8 @@ message in their chat template (Qwen3.6 with thinking disabled), while General-V
 its model card.
 
 A held-out judge needs at least one string accepted about 10\% of the time for an event to be possible, which
-Qwen3.6-35B-A3B-FP8 meets and Qwen3.8-27B-FP8 does not. Qwen3.8-27B-FP8, audited with the same prompt and decoding,
+Qwen3.6-35B-A3B-FP8 meets and
+Qwen3.8-27B-FP8\footnote{\url{https://huggingface.co/Qwen/Qwen3.8-27B-FP8}, released in 2026.} does not. Qwen3.8-27B-FP8, audited with the same prompt and decoding,
 accepts \str{Thought process:} on 1.5\% of the 471 problems, \str{True} on 0.4\% and no other string. With the
 largest seeded propensity of these two families on the hard pool (4.4\%), its exposure stays below 0.17 rewarded
 responses per step, so it was not trained against. Qwen3.6-35B-A3B-FP8 accepts \str{\{} on 84.7\%, \str{Thought

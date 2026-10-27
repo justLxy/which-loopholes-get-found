@@ -1729,3 +1729,14 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   against. units.csv: no exposure above 0.05 in the six xVerify runs, none with an event; against Qwen3.6-35B-A3B the
   string "{" had exposures 9.66 (seed 0, dose 4.0%) and 2.57 (seed 2, 1.2%), both with an event, and 0.35 (seed 1,
   0.3%) without one.
+- 2026-10-27: Four fixes after the team's check. (1) The Results paragraph "Clearing a judge without RL" is removed:
+  Qwen3.8-27B was never trained against, so its audit stays in Appendix C only (with its model link), and the
+  Limitations clause about it is gone. The paper's no-takeover predictions now rest on runs that happened: the six
+  xVerify runs and Qwen3.6 seed 1. General-Verifier is not such a case, since its seed-2 run had a top family at
+  2.74 without an event (the one exception in Figure 4a). (2) Figure 6b: each advantage label now sits 0.04 above
+  the higher of its bar and its DeepScaleR diamond, so none overlaps (`figures/gen_fig_h2_h3.py`). (3) Figure 5
+  draws static accuracy for the core rows only; it was not measured for Qwen3.6, and the held-out row no longer
+  needs the "2 of the 3 judges" note (`figures/gen_fig_auroc.py`, caption updated). (4) The related-work list of
+  five papers is split by method: verifier-side tests that ignore the policy's propensity (fuzzing, injected
+  noise) and policy-side work that records or anticipates hacking without ranking competing loopholes before
+  training. Both PDFs rebuilt, 12 pages, main text ends on page 7, no overfull boxes.
