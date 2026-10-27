@@ -7,7 +7,7 @@ Usage (after src.analysis.primary, whose units.csv it reads):
    the steps before the event's evaluation step (results/main/<run>/family_counts.csv, which counts every
    family response): how many rewarded responses a family had collected when it took over.
 2. Acceptance by problem source. The hard pool is mostly DeepScaleR problems and the easy pool mostly MATH, so
-   the H2 mechanism, the judge acceptance q and the advantage sqrt((1 - q) / q) of a rewarded response, is
+   the H2 mechanism, the judge acceptance q and the advantage of a rewarded response at that rate, is
    recomputed within each source: acceptance of the step-0 evaluation outputs of the core runs (all 200 of a
    run with their source, in runs/grpo/<run>/eval.jsonl, which is not committed), averaged over the seeds,
    next to each pool's share of DeepScaleR training problems (pools/pools-v1.json).
@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.analysis.confirmatory import group_size
+from src.analysis.stats import rewarded_advantage
 from src.paths import ROOT, display_path
 from src.pipeline.records import write_meta
 
@@ -66,7 +68,7 @@ def acceptance_by_source(units, runs_dir, step=0):
                          "source": source, "n": n, "accept": a / n})
     table = pd.DataFrame(rows).groupby(["judge", "pool", "source"], as_index=False).agg(
         accept=("accept", "mean"), outputs=("n", "sum"))
-    table["advantage_of_a_rewarded_response"] = ((1 - table["accept"]) / table["accept"]) ** 0.5
+    table["advantage_of_a_rewarded_response"] = [rewarded_advantage(q, group_size()) for q in table["accept"]]
     return table
 
 

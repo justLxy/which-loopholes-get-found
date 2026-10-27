@@ -2,7 +2,7 @@
 % Drawn at its printed size (16 cm, the ACL text width) with the paper's fonts: Times text (times.sty),
 % the standard LaTeX math fonts and Inconsolata for strings. Colors are the Okabe-Ito accents of the
 % other figures. Every number is one of the paper's; the group-normalization example uses its formula
-% sqrt((1 - q) / q) for the advantage of a rewarded response at acceptance rate q.
+% sqrt(7 (1 - q) / (8 q)), the advantage of a rewarded response in a group of 8 normalized by the sample std.
 \pdfinfoomitdate=1
 \pdftrailerid{}
 \documentclass[10pt,border=1pt]{standalone}
@@ -61,17 +61,17 @@
 % ------------------------------------------------------------------ 1b seeded starting policy (Latin square)
 \draw[card] (0.15,1.2) rectangle (5.15,3.83);
 \node[title] at (0.3,3.71) {Seeded starting policy};
-\node[anchor=east] at (0.93,3.2) {seed};
+\node[anchor=east] at (0.93,3.28) {seed};
 \foreach \c in {0,1,2}
-  \node at (1.3+0.66*\c,3.2) {\c};
+  \node at (1.3+0.66*\c,3.28) {\c};
 \foreach \r/\g in {0/{A (5)},1/{B (5)},2/{C (4)}}
-  \node[anchor=east] at (0.93,2.84-0.4*\r) {\g};
+  \node[anchor=east] at (0.93,2.92-0.4*\r) {\g};
 \foreach \r/\c/\d/\t in {0/0/0.3/10,0/1/1.2/24,0/2/4.0/42,
                          1/0/1.2/24,1/1/4.0/42,1/2/0.3/10,
                          2/0/4.0/42,2/1/0.3/10,2/2/1.2/24}
   \node[draw=frame, line width=0.4pt, fill=okblue!\t, minimum width=0.64cm, minimum height=0.38cm,
-        inner sep=0pt] at (1.3+0.66*\c,2.84-0.4*\r) {\d\%};
-\node[note, anchor=north west] at (0.3,1.76) {seeded share of each family group};
+        inner sep=0pt] at (1.3+0.66*\c,2.92-0.4*\r) {\d\%};
+\node[note, anchor=north west, align=left] at (0.3,1.8) {share of the SFT set per family\\[-1.5pt](23.5 to 27.2\% in all)};
 \node[mini] (T) at (4.12,2.84) {SFT on own\\correct answers};
 \node[mini] (M) at (4.12,2.06) {16 samples\\$\times$ 250 problems};
 \node (P) at (4.12,1.4) {$\phat_f$};
@@ -94,13 +94,13 @@
 \node[anchor=west] at (5.8,2.5) {hard};
 \node[anchor=west] at (6.35,2.5) {$(0{,}0{,}0{,}0{,}0{,}0{,}0{,}\ex)$};
 \node[anchor=west] at (8.45,2.5) {$q = \tfrac18$};
-\node[anchor=west] at (9.2,2.5) {adv.\ $2.6$};
+\node[anchor=west] at (9.2,2.5) {adv.\ $2.5$};
 \node[anchor=west] at (5.8,2.13) {easy};
 \node[anchor=west] at (6.35,2.13) {$(1{,}1{,}1{,}1{,}0{,}0{,}0{,}\ex)$};
 \node[anchor=west] at (8.45,2.13) {$q = \tfrac58$};
-\node[anchor=west] at (9.2,2.13) {adv.\ $0.77$};
-\node at (8.0,1.74) {advantage of a reward $\approx\sqrt{(1-q)/q}$};
-\node[note] at (8.0,1.42) {in training 1.8 to 2.1 against 0.7 to 0.8};
+\node[anchor=west] at (9.2,2.13) {adv.\ $0.72$};
+\node at (8.0,1.74) {advantage of a reward $=\sqrt{7(1-q)/(8q)}$};
+\node[note] at (8.0,1.42) {at mean rates 1.7 to 2.0 against 0.7 to 0.8};
 
 % ------------------------------------------------------------------ 3a visible reward
 \draw[card] (10.85,3.64) rectangle (15.85,5.45);

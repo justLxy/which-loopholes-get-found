@@ -2,8 +2,8 @@
 
 (a) Share of seeded runs with an event by training step, hard pool (21 runs) against easy pool (12 runs).
 (b) The mechanism behind H2: mean judge acceptance over the first 10 training steps for the core judges;
-    the number above each bar is the advantage sqrt((1 - q) / q) that a rewarded response receives under
-    group normalization at that acceptance rate q. The diamonds are the acceptance of the step-0 evaluation
+    the number above each bar is the advantage sqrt(7 (1 - q) / (8 q)) that a rewarded response receives in a
+    group of 8 under group normalization at that acceptance rate q (src.analysis.stats.rewarded_advantage). The diamonds are the acceptance of the step-0 evaluation
     outputs on the DeepScaleR problems alone (results/analysis/acceptance_by_source.csv, from
     src.analysis.descriptive), which make up 85% of the hard pool and 40% of the easy pool: the hard-easy
     gap stays when problem source is held fixed.

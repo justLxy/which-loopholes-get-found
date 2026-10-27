@@ -29,6 +29,17 @@ def holm(pvalues):
     return adjusted
 
 
+def rewarded_advantage(q, group_size):
+    """Advantage of a rewarded response (reward 1) in a group of binary rewards with acceptance rate q.
+
+    GRPO with scale_rewards: group (configs/grpo.yaml) uses (r - mean) / std over the group, and TRL's std is the
+    sample standard deviation (Bessel's correction, trl.trainer.utils.nanstd). For a group of G responses with a
+    share q rewarded this is sqrt((G - 1) / G * (1 - q) / q). Evaluated at a mean acceptance rate it is a plug-in
+    value, not the mean advantage over groups, which the logs cannot give (they keep only flagged responses).
+    """
+    return math.sqrt((group_size - 1) / group_size * (1 - q) / q)
+
+
 def binomial_two_sided(k, n):
     """Exact two-sided binomial test of k successes in n trials against one half (sign test)."""
     if n == 0:

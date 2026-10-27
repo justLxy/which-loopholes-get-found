@@ -40,7 +40,7 @@ def test_acceptance_is_split_by_source_and_averaged_over_seeds(tmp_path):
     assert table.loc["deepscaler", "accept"] == pytest.approx((0.5 + 1.0) / 2)
     assert table.loc["all", "accept"] == pytest.approx((1 / 3 + 1.0) / 2)
     assert table.loc["deepscaler", "outputs"] == 4
-    assert table.loc["deepscaler", "advantage_of_a_rewarded_response"] == pytest.approx(((1 - 0.75) / 0.75) ** 0.5)
+    assert table.loc["deepscaler", "advantage_of_a_rewarded_response"] == pytest.approx((7 / 8 * (1 - 0.75) / 0.75) ** 0.5)
 
 
 @needs_units

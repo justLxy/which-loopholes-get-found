@@ -7,8 +7,8 @@ H2 (hard prompts raise the risk). The core runs come in pairs that differ only i
 judge, SFT checkpoint and training seed on the hard and on the easy pool. A run's outcome is whether
 any family has an event; the test is the exact McNemar test on the 12 pairs (two-sided sign test on
 the discordant pairs). As a description of the mechanism it also reports the judge's acceptance rate
-q over the first 10 training steps per judge and pool, and the advantage sqrt((1 - q) / q) that a
-rewarded response receives under group normalization (configs/grpo.yaml, scale_rewards: group).
+q over the first 10 training steps per judge and pool, and the advantage that a rewarded response receives
+under group normalization at that rate (src.analysis.stats.rewarded_advantage, groups of num_generations).
 
 H3 (exploit-style data before RL raises the risk with dose). In the core runs every family is seeded
 at 0.3%, 1.2% and 4.0% across the three seeds. Which family got which tier was randomized once, by
@@ -35,7 +35,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from src.analysis.stats import binomial_two_sided, holm
+from src.analysis.stats import binomial_two_sided, holm, rewarded_advantage
 from src.detectors import FAMILIES
 from src.paths import ROOT, display_path
 from src.pipeline.records import write_meta
@@ -60,6 +60,13 @@ def h2_test(units):
             "p": binomial_two_sided(hard_only, hard_only + easy_only)}
 
 
+GRPO_CONFIG = ROOT / "configs" / "grpo.yaml"
+
+
+def group_size():
+    return yaml.safe_load(GRPO_CONFIG.read_text())["trainer"]["num_generations"]
+
+
 def acceptance(units, results_dir, steps=10):
     """Mean judge acceptance over the first `steps` training steps per core judge and pool."""
     rows = []
@@ -69,7 +76,7 @@ def acceptance(units, results_dir, steps=10):
         q = sum(r["accept_rate"] for r in m if r["step"] < steps) / sum(1 for r in m if r["step"] < steps)
         rows.append({"judge": g["judge"].iat[0], "pool": g["pool"].iat[0], "seed": g["seed"].iat[0], "accept": q})
     table = pd.DataFrame(rows).groupby(["judge", "pool"], as_index=False)["accept"].mean()
-    table["advantage_of_a_rewarded_response"] = ((1 - table["accept"]) / table["accept"]) ** 0.5
+    table["advantage_of_a_rewarded_response"] = [rewarded_advantage(q, group_size()) for q in table["accept"]]
     return table
 
 

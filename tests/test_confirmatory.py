@@ -7,12 +7,20 @@ import pytest
 import yaml
 
 from src.analysis.confirmatory import dose_null, h2_test, h3_test, tier_rank, two_sided
-from src.analysis.stats import binomial_two_sided, holm
+from src.analysis.stats import binomial_two_sided, holm, rewarded_advantage
 from src.paths import ROOT
 from src.train import queue
 
 UNITS = ROOT / "results" / "analysis" / "units.csv"
 needs_units = pytest.mark.skipif(not UNITS.exists(), reason="run src.analysis.primary first")
+
+
+def test_rewarded_advantage_matches_group_normalization_with_the_sample_std():
+    import numpy as np
+    for k in range(1, 8):                                       # k of 8 responses rewarded
+        r = np.array([1.0] * k + [0.0] * (8 - k))
+        direct = (1 - r.mean()) / r.std(ddof=1)                 # TRL: (r - mean) / sample std
+        assert rewarded_advantage(k / 8, 8) == pytest.approx(direct)
 
 
 def test_holm_and_the_sign_test():

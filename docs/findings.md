@@ -1678,3 +1678,54 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   LaTeX centres float columns vertically (`\@fptop` and `\@fpbot` both 0pt plus 1fil). From just before the table,
   `\@fptop` is 0pt, so float columns start at the top; nothing before it changes. Both PDFs rebuilt, 12 pages, no
   overfull boxes.
+- 2026-10-26: Paper revised after a read from the reviewers' side. (1) The pre-registration wording is gone
+  (abstract, Table 1 "five main tests", the design paragraph, the H3 paragraph, Appendix D, Limitations); the paper
+  states only that every exposure score is computed from static measurements taken before the run it predicts.
+  (2) Scope: the abstract and the conclusion say "a small policy trained with GRPO", and the abstract gives the run
+  sets of each number (AUROC 0.974 on the 24 core runs against 0.937 for FPR; 0.995 on the 9 held-out runs against
+  0.979; the winner ranked first in all 12 runs with an event, core and held-out, against 6 for FPR). (3) Seeding:
+  all 14 families share one SFT set so that they compete within a run, so seeding strings are 23.5%, 27.2% and
+  26.3% of the 2,000 examples under rotations 0, 1 and 2 (results/main/sft-main-rot<s>/data_summary.json,
+  seeded_share); the introduction, Section 3 and Limitations now say so, and "fine-tuning data that contain a few
+  such responses" is gone. (4) The bold claim "the product is the right combination" is now "both factors are
+  needed", with the note that the 12 winners do not narrow the weight ratio beyond 0.46 to 1.66. The H3 paragraph
+  no longer cites the winner logit and reports only the two-sided p = 0.056 (the one-sided value stays in Appendix
+  D). (5) The gold audit is reported as 195 of 200 (97.5%), 99.7% weighted by stratum size, and the released
+  material as the code and the per-run training and evaluation summaries (no demo, no raw logs).
+- 2026-10-26: H2 advantage made exact. TRL 1.15.0 normalizes group rewards by the sample standard deviation
+  (`trl.trainer.utils.nanstd` applies Bessel's correction; configs/grpo.yaml has scale_rewards: group), so a
+  rewarded response in a group of 8 with acceptance rate q gets sqrt(7 (1 - q) / (8 q)), not sqrt((1 - q) / q);
+  the earlier values were 6.5% too high. New `src.analysis.stats.rewarded_advantage` (tested against a direct
+  computation for k = 1 to 7 of 8) is used by `src.analysis.confirmatory` and `src.analysis.descriptive`; only the
+  advantage columns of `h2_acceptance.csv` and `acceptance_by_source.csv` changed. At the mean acceptance of steps 0
+  to 9 the vulnerable judges give 1.72 to 1.96 on hard prompts and 0.66 to 0.75 on easy ones (ratio 2.55 to 2.60
+  within a judge, so "about 2.6 times", not 2.5); on the step-0 DeepScaleR outputs 1.74 to 2.02 against 0.77 to
+  0.88. These are plug-in values: rollouts.jsonl keeps only flagged responses (false positives, family members,
+  parse failures) and train_metrics.jsonl only per-step means, so the advantage of each rewarded response within its
+  own group cannot be recomputed; Appendix D says so. Figure 2's example groups are now 2.5 (q = 1/8) and 0.72
+  (q = 5/8); Figure 6b's labels come from the new column. Table 5 is set in one line per row (scriptsize), which
+  keeps it on page 12. The main text ends on page 7, 12 pages in all, no overfull boxes; 292 tests pass.
+- 2026-10-26: Paper reorganized around its strongest result (12 of 12 winners ranked first) with nine narrative
+  rules from the team. Abstract: question, gap, idea, result, with "In GRPO training" in place of "for a small
+  policy" (the model is named in the results sentence and in Limitations). Setting introduces the three held-out
+  judges without the selection story; Qwen3.8-27B is now a result ("Clearing a judge without RL": the audit puts its
+  exposure at no more than 0.17 per step, an order of magnitude below the least exposed event, 1.92), and the
+  10% rule that made Qwen3.6 the third held-out judge is stated in Appendix C. The judge audit is motivated by the
+  principle (GRPO reinforces the strings it samples; a string's FPR can differ from its family mean by 67 points)
+  instead of the pilot. The early-growth correlations (0.28, -0.04, -0.33) and the held-out difference to FPR alone
+  (0.017, interval 0.000 to 0.035, p = 0.066, primary_auroc.csv) moved to Appendix D; the per-token likelihood
+  variant stays in Appendix D and Table 5. Table 1 no longer states which tests fail Holm; the column shows the
+  adjusted p. H3 is presented with the dose gradient, the matched control and the resolution of the design: the
+  exact null (src.analysis.confirmatory.dose_null on the 9 core events) gives a two-sided p of 0.0167 for the
+  largest possible rank sum (26) and 0.0558 for the observed second largest (25), one-sided 0.0333. Some low-tail
+  sums give two-sided values between these two, so the paper does not call 0.056 the second smallest attainable p.
+  The held-out paragraph leads with 5 of 5 winners against 3 for FPR alone and explains the close AUROC by the
+  ceiling. Conclusion ends on the cost and value of the audit; its earlier "a run that costs hundreds" overstated a
+  run here (4.8 GPU hours on average) and is replaced by "an audit costing a small fraction of the 175 GPU hours of
+  training". Limitations adds that the judge ruled out by the audit alone was not trained against. Table 4 and Table
+  5 captions lose sentences repeated in the text, and two appendix sentences are shortened, which keeps the paper
+  at 12 pages with the main text ending on page 7.
+- 2026-10-26: The Conclusion now ends on predictions that RL confirmed, not on Qwen3.8-27B, which was never trained
+  against. units.csv: no exposure above 0.05 in the six xVerify runs, none with an event; against Qwen3.6-35B-A3B the
+  string "{" had exposures 9.66 (seed 0, dose 4.0%) and 2.57 (seed 2, 1.2%), both with an event, and 0.35 (seed 1,
+  0.3%) without one.
