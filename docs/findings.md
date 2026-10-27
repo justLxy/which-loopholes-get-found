@@ -1833,3 +1833,41 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   measurements taken before the run it predicts, and that `configs/protocol.yaml` was tagged `protocol-v1` before
   the first main run (2026-10-19) and amended once (`protocol-v1.1`). Both PDFs rebuilt, 13 pages, no overfull
   boxes, main text ends at the top of page 8.
+- 2026-10-27: The contribution list at the end of Section 1 no longer has the 2em list indent of acl.sty. Within a
+  group around that list, `\leftmargini` is the width of the bullet plus `\labelsep` (5pt), so the bullets sit at
+  the column edge and the item text gains about 1.5em per line; other lists are unaffected (it is the only list in
+  the paper). The list is two lines shorter. Layout check after the rebuild: floats on the same pages as before
+  (Table 1 at the bottom of the left column of page 6, where the text now runs on from page 5 directly below
+  Figure 6, as intended), 13 pages, no overfull boxes, main text ends at the top of page 8.
+- 2026-10-27: Format check against ACL 2027. The first call for main papers (2027.aclweb.org/calls/main/, published
+  2026-09-29; ARR deadline 2027-01-04) defers to the ARR submission requirements (aclrollingreview.org/cfp).
+  Compliant: acl.sty, acl_latex.tex and formatting.md are byte-identical to acl-org/acl-style-files master
+  (d5adc823, 2026-06-29); review mode with line and page numbers; A4, two columns, Times, all fonts embedded and no
+  Type 3; main text within 8 pages; Limitations unnumbered after the Conclusion and before the references; ethics
+  statement at the end; appendices after the references in two columns; every caption below its float; all 28
+  references cited and linked (the three EMNLP 2026 papers have Anthology links, no DOI yet); no
+  acknowledgements; no author in the PDF metadata. Fixed: (1) the abstract had 210 words against the 200-word
+  limit of formatting.md (line 158) and now has 199, with the same content ("times" for "multiplied by", "vary
+  propensity by seeding", "exploited first in all 12 runs with an exploit", "Exposure reaches an AUROC of 0.974 on
+  the 24 runs of four core judges, against 0.937 for that rate alone", "judges accept about 20% of responses");
+  (2) the title is in APA title case, "Before RL Training"; (3) acl_natbib.bst is the master version (the June fix
+  for author lists ending in "and others"; the bibliography of this paper is identical with either version);
+  (4) `\repourl` now follows acl.sty's anonymize flag: review mode prints a \todo placeholder until an anonymized
+  mirror exists (the anonymous.4open.science line is commented in the preamble), the preprint and final versions
+  link the GitHub repository. The review PDF no longer contains the GitHub URL in its text or link annotations.
+  Not changed: README still has "before" in the title (lines 1 and 273); the ethics section keeps its title,
+  although ARR recommends "Ethical considerations"; generative AI use in writing and coding must be disclosed in
+  the Responsible NLP checklist and, for the final version, in the Acknowledgements. Both PDFs rebuilt, 13 pages,
+  no overfull boxes, floats on the same pages, main text ends at the top of page 8.
+- 2026-10-27: Syntax pass over the paper prose. The earlier no-dash and parenthesis passes had often replaced
+  a dash-fenced or bracketed aside by a pair of commas, which left many sentences chopped into comma-fenced pieces. About 60
+  sentences were rewritten in the main text, captions and appendices: an aside fenced by two commas is folded into
+  the clause ("a more accurate verifier fine-tuned from it", "The dose ranks of the core events sum to 25") or
+  becomes its own sentence, and sentences that chained three or four clauses with ", so" or ", and" plus an insert
+  are split (for example the hard-pool robustness sentence, the early-growth mechanism, the 2.74 exception, the
+  Qwen3.6 prediction, the detector checks of Appendix B and the H3 statistic of Appendix D). Bare numbers stay in
+  brackets where that reads better: (median 586), (14 in all), (base accuracy 16.6%), (97.5%, or 99.7% with each
+  sampled stratum weighted by its size), (0.033 to 0.141), the dose rank (1 to 3). No number, claim or citation
+  changed; the abstract keeps 199 words. The header comment of main.tex records the convention. Both PDFs rebuilt:
+  floats on the same pages (Table 1 still at the bottom of the left column of page 6, under text that runs on from
+  page 5), 13 pages, no overfull boxes, and the main text still ends at the top of page 8.
