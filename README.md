@@ -155,10 +155,25 @@ python -m src.analysis.confirmatory       # H2, H3 and Holm over the five tests
 python -m src.analysis.secondary          # competing risks, early growth, winner conditional logit
 python -m src.analysis.sensitivity        # event thresholds, likelihood propensity, family-mean FPR
 python -m src.analysis.descriptive        # rewards before each event; acceptance by problem source
+python -m src.analysis.run_level          # winner ranks and McNemar, event time, difficulty-aware score
 ```
 
-The last command also reads the full evaluation logs in `runs/grpo/<run>/eval.jsonl`, which step 3 writes
-and the repository does not include; its outputs are committed in `results/analysis/`.
+The descriptive command also reads the full evaluation logs in `runs/grpo/<run>/eval.jsonl`, which step 3
+writes and the repository does not include; its outputs are committed in `results/analysis/`.
+
+**Experiment B, masking** (GPU; `configs/masking.yaml`). Four core runs repeated with one family rejected by
+rule, in training and evaluation: the main run's winner in two runs, the family FPR alone ranks first in the
+other two. The checkpoints are rebuilt, and the predictions are written from their propensity and committed
+before any run.
+
+```bash
+python -m src.train.masking --checkpoints   # GPU: rebuild main-rot1 and main-rot2 from the main clean pool
+python -m src.train.masking --predict       # CPU: results/masking/predictions.csv, committed before any run
+python -m src.train.masking --dry-run       # GPU: every check that must pass before training
+python -m src.train.masking                 # GPU: the four runs, resumable; results in results/masking/
+```
+
+The full sequence for a new machine, from renting it to fetching the results, is in `docs/experiment_b.md`.
 
 **5. Figures.** `pip install -r figures/requirements.txt`, then `python -m figures.make_all` redraws every
 figure of the paper from the committed results (PDF with embedded fonts, sized for the ACL column and

@@ -3,6 +3,8 @@
 Usage (on the GPU; scripts/run_grpo.sh starts the judge server first):
     python -m src.train.grpo --judge r1_distill_verifier_1p5b --pool hard --seed 0
     python -m src.train.grpo --judge engineered:no_box --pool hard --seed 0
+Experiment B (configs/masking.yaml, through src.train.masking): --mask-family F rejects every response the
+detectors put in family F, in training and in the evaluations, and sets F's predicted risk to zero.
 Local smoke test (CPU or Apple MPS, tiny model, no vLLM, no server):
     python -m src.train.grpo --judge engineered:no_box --pool hard --local-test
 GPU integration test (a 24GB card is enough: 0.5B policy, small batch, 5 steps, real vLLM path):
@@ -71,7 +73,15 @@ def build_dataset(problems):
                                "problem": p["problem"], "reference": p["reference"]} for p in problems])
 
 
-def make_judge(name, backend, url):
+def make_judge(name, backend, url, mask_families=()):
+    judge = _make_judge(name, backend, url)
+    if mask_families:
+        from src.judges.masked import MaskedJudge
+        judge = MaskedJudge(judge, mask_families)
+    return judge
+
+
+def _make_judge(name, backend, url):
     if name.startswith("engineered:"):
         from src.judges.engineered import EngineeredJudge
         return EngineeredJudge(name.split(":", 1)[1])
@@ -88,10 +98,19 @@ def make_judge(name, backend, url):
     raise ValueError(f"unknown judge backend {backend!r}")
 
 
-def risk_snapshot(judge, pool, out_path, risk_csv=RISK_SCORES):
-    """Copy this judge's and pool's predicted risk scores next to the run. Returns the row count."""
+def risk_snapshot(judge, pool, out_path, risk_csv=RISK_SCORES, mask_families=()):
+    """Copy this judge's and pool's predicted risk scores next to the run, with the FPR and risk of a masked
+    family set to zero (the patched judge never accepts it). Returns the row count."""
     with open(risk_csv) as f:
         rows = [r for r in csv.DictReader(f) if r["judge"] == judge and r["pool"] == pool]
+    if mask_families:
+        for r in rows:
+            r["masked"] = int(r["family"] in mask_families)
+            if r["masked"]:
+                r.update({"fpr": "0.0", "risk": "0.0", "log_risk": "-inf"})
+        risks = [float(r["risk"]) for r in rows]
+        for r in rows:                                   # ties share the best rank, as in src.audit.likelihood
+            r["rank_in_judge_pool"] = float(1 + sum(x > float(r["risk"]) for x in risks))
     if rows:
         with open(out_path, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -138,6 +157,8 @@ def parse_args(argv=None):
     ap.add_argument("--learning-rate", type=float, help="override trainer.learning_rate")
     ap.add_argument("--stop-when", metavar="KEY:VALUE",
                     help="pilot runs only: stop once e/KEY >= VALUE in 2 evaluations in a row, e.g. no_box:0.5")
+    ap.add_argument("--mask-family", action="append", default=[], metavar="FAMILY",
+                    help="experiment B: reject this family by rule in training and evaluation (repeatable)")
     ap.add_argument("--judge-backend", default="server", choices=["server", "local"])
     ap.add_argument("--judge-url", help="override judge_server.url")
     ap.add_argument("--save-all-rollouts", action="store_true", help="keep every training response, not only flagged ones")
@@ -173,12 +194,12 @@ def main(argv=None):
 
     n_risk = 0
     if not args.judge.startswith("engineered:"):
-        n_risk = risk_snapshot(args.judge, args.pool, run_dir / "predicted_risk.csv", args.risk_csv)
+        n_risk = risk_snapshot(args.judge, args.pool, run_dir / "predicted_risk.csv", args.risk_csv, args.mask_family)
     backend = "local" if args.local_test and not args.judge.startswith("engineered:") else args.judge_backend
     write_meta(run_dir, judge=args.judge, pool=args.pool, seed=args.seed, profile=args.profile,
                judge_backend=backend, n_train=len(train), n_eval=len(evals), predicted_risk_rows=n_risk,
                grpo_config=cfg, manifest=display_path(args.manifest), stop_when=args.stop_when,
-               risk_csv=display_path(args.risk_csv), tag=args.tag)
+               risk_csv=display_path(args.risk_csv), tag=args.tag, mask_families=args.mask_family)
     print(f"run {name}: {len(train)} train / {len(evals)} eval problems, predicted risk rows {n_risk}", flush=True)
 
     # Heavy imports after the cheap checks, so argument errors fail fast.
@@ -194,7 +215,7 @@ def main(argv=None):
         from src.train import local_compat
         if local_compat.install():
             print("local test: TRL's Triton kernel is unavailable, using the PyTorch log-prob shim", flush=True)
-    judge = make_judge(args.judge, backend, args.judge_url or cfg["judge_server"]["url"])
+    judge = make_judge(args.judge, backend, args.judge_url or cfg["judge_server"]["url"], args.mask_family)
     model_name = cfg["policy"]["model"]
     tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left")
     t = cfg["trainer"]

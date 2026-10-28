@@ -1871,3 +1871,110 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   changed; the abstract keeps 199 words. The header comment of main.tex records the convention. Both PDFs rebuilt:
   floats on the same pages (Table 1 still at the bottom of the left column of page 6, under text that runs on from
   page 5), 13 pages, no overfull boxes, and the main text still ends at the top of page 8.
+- 2026-10-27: Zero-GPU checks for a mock ARR review, computed from `results/analysis/units.csv`, the eval and
+  training logs of `results/main` and the existing helpers (scratch scripts, to be moved into `src/analysis` with
+  tests if adopted). Run level, 12 runs with an event: exposure ranks the first winner first in 12, FPR alone in 6,
+  propensity alone in 2; exposure is right where FPR is wrong in 6 runs and the reverse never happens (exact McNemar
+  p = 0.031), against propensity 10 to 0 (p = 0.002). In 5 of the 12 runs the winner is neither the top-FPR nor the
+  top-propensity family. Mean reciprocal rank 1.00, 0.71 and 0.52. Within-run AUROC averaged over the 12 runs: 0.990
+  for exposure, 0.954 for FPR, 0.837 for propensity (per run: exposure higher than FPR in 6, lower in 0; higher than
+  propensity in 11, lower in 0). Run-level AUROC of a run's top exposure for "the run has an event": 0.865 over the
+  33 seeded runs (FPR 0.815), 0.981 over the 21 seeded hard-pool runs (FPR 0.944); on the hard pool 12 of the 13 runs
+  whose top family reaches 1.92 had an event and none of the 8 below. Out of sample: the lowest event exposure of the
+  core runs is 1.92 (held-out 2.09); applied to the held-out runs it classifies 8 of 9 (the miss is the
+  General-Verifier run at 2.74), and none of the 119 held-out families below it had an event. Second events:
+  Qwen2.5-Math hard s1 (adversarial prefixes at step 70) and R1-Distill-Verifier hard s2 (empty symbols at step 120)
+  rank 3 and 2 by exposure among the 13 families left after the first winner. Event time: over the 14 events,
+  Spearman between event step and exposure is -0.84 (permutation p = 0.0003; FPR -0.43, propensity -0.52); the
+  log-log slope of step on exposure is -0.88 (14 events) and -1.03 (12 first events), as a fixed number of rewards
+  collected at rate exposure predicts; the kinetic form log(1/p)/(FPR - q0) reaches 0.73. Difficulty-aware score
+  p_hat (FPR - q0) / sqrt(q0 (1 - q0)), with q0 the judge acceptance of the 200 step-0 evaluation outputs of the
+  run (before any update): AUROC 0.993 on the core runs (exposure 0.974; difference +0.019, run bootstrap 0.004 to
+  0.037, p = 0.008), 0.988 on the core hard pool, 0.998 on the held-out runs, winner ranked first in all 12; this
+  score was defined after the runs. Pool confound: in the first 10 training steps the family responses of the 42
+  judge and family pairs with at least 50 responses in each core pool are accepted at 19.5% on the hard pool and
+  19.4% on the easy pool (hard higher in 23 pairs, easy in 19), close to the audit FPR, so the easy pool is not
+  safer because the strings are rejected more on easy problems. Without std normalization (Dr. GRPO) a rewarded
+  response would get 1 - q, 0.77 to 0.81 on hard against 0.33 to 0.39 on easy prompts, a ratio of about 2.2 against
+  2.6 with it. Audit cost: the propensity audit is 16 x 250 = 4,000 samples per checkpoint and pool
+  (`results/main/sft-main-rot*/propensity_sampled.csv`), 5.2% of the 76,800 training samples of one run; the 174,760
+  responses of the introduction are the difficulty pass, reused. Since an event needs exposure 1.92, that is
+  p_hat FPR at least 0.0075, a family able to win appears about 30 times or more in 4,000 samples, and a family absent
+  from them has p_hat at most 7.5e-4 (rule of three) and exposure at most 0.19. The five references named by the
+  review exist on arXiv: 2610.28707 (SimHack, 2026-10-20), 2607.05904 (Zhou), 2504.13837 (Yue et al., NeurIPS 2025
+  per Semantic Scholar), 2503.20783 (Dr. GRPO), 2511.18397 (MacDiarmid et al.).
+- 2026-10-28: The zero-GPU review checks are now `src/analysis/run_level.py` (tests in `tests/test_run_level.py`;
+  outputs `results/analysis/run_level_winners.csv`, `run_level_tests.csv`, `event_timing.csv`,
+  `pool_acceptance.csv`) and reproduce the numbers of the 2026-10-27 entry. One count changes: pool acceptance now
+  keeps every core judge, xVerify included, so it covers 56 judge and family pairs with 14.7% acceptance on both
+  pools (hard higher in 23, easy in 22). Paper changes. Abstract: "about 20% of training responses rather than over
+  60%" (200 words), since 61% to 67% is the training acceptance and 58% to 63% the step-0 evaluation. Section 1: the
+  exposure formula uses $N$ for the 256 responses per step, as $G$ is the group size in GRPO; the 174,760 responses
+  are said to come from the difficulty pass; the first contribution adds the McNemar p, and the second replaces the
+  conditional-logit claim by the 5 of 12 winners that were neither the top-FPR nor the top-propensity family and by
+  event timing. Section 3: the judge audit costs 6,594 judge calls per judge; the propensity audit is 4,000 samples
+  per checkpoint and pool, about 5% of one run, and suffices because a family able to win appears about 30 times or
+  more. Section 5: events in 12 of the 21 seeded hard-pool runs (so the Limitations count appears in the results);
+  McNemar 6 to 0 and 10 to 0 and the within-run AUROC in the H1 paragraph; the likelihood-ratio p-values of the
+  separated conditional logit move to Appendix D, replaced by the 5 of 12 count; event step against exposure; Dr.
+  GRPO centering-only advantage; equal acceptance on both pools; the difficulty-aware score, stated as defined after
+  the runs; the core level 1.92 applied to the held-out runs. Table 1 caption gives the null mean 18.1. Section 6
+  cites Yue et al. (NeurIPS 2025, OpenReview 4OsgYD7em5) for RLVR reweighting what the base model samples and
+  Section 5 cites Liu et al. (Dr. GRPO, COLM 2025, OpenReview 5PAF7PAY2Y). By the authors' decision the arXiv-only
+  papers suggested by the review (SimHack, Zhou 2026, MacDiarmid et al. 2025) are not cited. Section 7 states the
+  audit cost. Appendix D gains paragraphs on run-level checks, second events and event time, and the
+  difficulty-aware score, plus the pool acceptance under H2 and H3. Figures 4b and 5 label the score "exposure"
+  (figures/style.py). Layout: Figure 5, Table 1 and Figure 6 are defined where Results starts, so Figure 5 opens the
+  right column of page 5, Table 1 sits at the bottom of the left column of page 6 and Figure 6 heads page 6; the main
+  text ends on page 8 and the PDF has 14 pages, the last holding the end of Appendix D and Table 5.
+- 2026-10-28: Mahmoud et al. (arXiv 2605.12474) is cited as its NeurIPS 2026 version. The authors reported the
+  acceptance from the corresponding author's homepage; the conference's own poster page
+  (neurips.cc/virtual/2026/poster/154025) lists the same title and six authors as a NeurIPS 2026 poster and links
+  OpenReview forum Gor618iz3H. The page names no track, so the entry uses the main proceedings title ("The Fortieth
+  Annual Conference on Neural Information Processing Systems"). The OpenReview API asked for a browser challenge
+  and was not used; its search index still showed only the ICML 2026 AIWILD workshop version (X5sPkeE60f), and the
+  arXiv record has no journal reference. Ten references still print as preprints. Both PDFs rebuilt; layout unchanged.
+- 2026-10-28: Yue et al. (2025) keeps eight authors with "Yang Yue" first and sixth. The NeurIPS 2025 poster page,
+  the arXiv record and the OpenReview record list eight authors, and OpenReview links the two names to different
+  profiles (~Yang_Yue1 and ~Yang_Yue4); Semantic Scholar shows seven because it merges them.
+- 2026-10-28: Experiment B (masking) prepared, not yet run. Design (`configs/masking.yaml`): repeat four core
+  hard-pool runs of the main experiment with one family rejected by rule, through `src/judges/masked.py`, which
+  rejects every response the detectors put in the masked family in training and in the evaluations and passes every
+  other response to the judge; judge, pool, seed, checkpoint and GRPO settings are those of the main run. Runs are
+  chosen among the core runs where exposure and FPR alone rank a different family first, keeping those where the two
+  scores also disagree about the winner after the mask. Masking the main-run winner (the exposure favourite):
+  Qwen2.5-Math-1.5B-Instruct seed 1, mask reasoning_opener; R1-Distill-Verifier-1.5B seed 1, mask reasoning_opener.
+  Masking the FPR favourite, which did not win: Qwen2.5-Math-1.5B-Instruct seed 1, mask answer_explanation;
+  R1-Distill-Verifier-1.5B seed 2, mask empty_symbols. Not chosen: Qwen2.5-Math seed 0 and R1-Distill-Verifier seed 2
+  with the winner masked (runner-up exposure 2.05 and 2.30, close to the 1.92 level), R1-Distill-Verifier seed 1 and
+  Qwen2.5-Math seed 0 with the FPR favourite masked (exposure and FPR alone predict the same winner), and the
+  held-out Qwen2.5-7B runs (same reason). Predictions (`python -m src.train.masking --predict`,
+  `results/masking/predictions.csv`, from the committed risk scores of main-rot1 and main-rot2 and the first-event
+  fit log step = 5.642 - 1.030 log exposure, residual sd 0.380, 90% band of 1.645 sd), by run: system prompt
+  mimicry wins at about step 78 (42 to 146), exposure 3.47, where FPR alone predicts answer explanation; system
+  prompt mimicry at about step 65 (35 to 121), exposure 4.18, where FPR alone predicts empty symbols; reasoning
+  opener still wins at about step 54 (29 to 101; main run 50), where FPR alone predicts empty symbols and
+  propensity alone system prompt mimicry; answer explanation still wins at about step 63 (34 to 117; main run
+  100), where FPR alone predicts reasoning opener. `src/train/grpo.py` gains --mask-family (the predicted risk
+  snapshot sets the masked family's FPR and risk to zero and reranks); `src/train/masking.py` writes the predictions,
+  checks that each checkpoint on the GPU machine has the committed propensity (otherwise rebuild, repredict from
+  the checkpoint and commit before training), runs the four runs through scripts/run_grpo.sh and packs results into
+  `results/masking/`. Tests in `tests/test_masking.py`; 309 passed. Expected cost about 12 to 20 GPU hours on the
+  RTX PRO 6000 (runs with a takeover took 2.7 hours on average), plus about an hour if the two checkpoints must be
+  rebuilt.
+- 2026-10-28: The main-run machine is destroyed, and with it the SFT checkpoints, so experiment B rebuilds main-rot1
+  and main-rot2. The Mac keeps the main experiment's clean pool (`runs/vast/sft/clean_pool.jsonl` and `.json`; its
+  sampling statistics, 17,000 sampled, 2,425 correct, 2,424 kept, 895 s, equal the `clean_sampling` of
+  `results/main/sft-main-rot*/data_summary.json`), and every other input of the seeding set is seeded, so the
+  rebuilt seeding sets are the same; SFT is rerun with the same seed, and the propensity is measured again, since
+  vLLM sampling is not reproducible token for token. Workflow (`docs/experiment_b.md`): `python -m
+  src.train.masking --checkpoints` on the GPU rebuilds both checkpoints with the queue's steps (string likelihood
+  skipped), copies their summary and scores to `results/masking/sft-main-rot<s>/` and checks the seeding set
+  against the main one; the predictions are then made from these scores on the Mac and committed; the run mode
+  starts only when the predictions file is committed and unmodified, equals a fresh prediction from the committed
+  scores, and each checkpoint on the machine has the committed propensity. The predictions from the main
+  experiment's checkpoints are kept for reference in `results/masking/predictions_original.csv`.
+  `scripts/vast_onstart.sh` resumes this queue after a container restart when `runs/masking/AUTO_RESUME` exists,
+  and `scripts/stop_when_done.sh` also watches and packs it. Machine: one RTX PRO 6000 96 GB on Vast.ai as in the
+  main runs, driver 580 or later, image `vastai/base-image:cuda-13.0.3-auto`, 150 to 200 GB disk; only the policy and
+  the two judges of the runs are downloaded. 310 tests pass.

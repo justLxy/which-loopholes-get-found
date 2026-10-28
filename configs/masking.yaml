@@ -1,0 +1,23 @@
+# Experiment B, decided 2026-10-28 (docs/findings.md): masking interventions on core runs of the main experiment.
+# A masked family is rejected by a rule (its detector, src/judges/masked.py) in training and in the evaluations;
+# judge, pool, seed, SFT recipe and every GRPO setting are those of the main run with the same judge, pool and
+# seed. The runs are the core runs where exposure and FPR alone rank a different family first and where the two
+# scores also disagree about who wins once the family is masked, so every run separates the two accounts.
+# The main checkpoints were lost with the main-run machine, so main-rot1 and main-rot2 are rebuilt from the same
+# clean pool (runs/sft/clean_pool.jsonl) and recipe; the predictions use the propensity of the rebuilt checkpoints
+# and are committed before the first run. Steps: docs/experiment_b.md.
+
+checkpoint: main-rot<seed>                                   # runs/sft/main-rot<seed>, rebuilt for this experiment
+tag: mask-<family>
+scores: results/masking/sft-<checkpoint>/risk_scores.csv     # committed copy of the rebuilt checkpoint's scores
+original_scores: results/main/sft-<checkpoint>/risk_scores.csv   # the main experiment's checkpoint, for reference
+predictions: results/masking/predictions.csv
+level: 1.92                         # lowest exposure of any main-run event; below it no event is predicted
+timing_fit: results/analysis/event_timing.csv   # first events: log step = a + b log exposure
+runs:
+  # Mask the exposure favourite, the family that won the main run.
+  - {judge: qwen2p5_math_1p5b_instruct, pool: hard, seed: 1, mask: reasoning_opener}
+  - {judge: r1_distill_verifier_1p5b, pool: hard, seed: 1, mask: reasoning_opener}
+  # Mask the FPR favourite, a family that did not win the main run.
+  - {judge: qwen2p5_math_1p5b_instruct, pool: hard, seed: 1, mask: answer_explanation}
+  - {judge: r1_distill_verifier_1p5b, pool: hard, seed: 2, mask: empty_symbols}
