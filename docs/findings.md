@@ -1978,3 +1978,16 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   and `scripts/stop_when_done.sh` also watches and packs it. Machine: one RTX PRO 6000 96 GB on Vast.ai as in the
   main runs, driver 580 or later, image `vastai/base-image:cuda-13.0.3-auto`, 150 to 200 GB disk; only the policy and
   the two judges of the runs are downloaded. 310 tests pass.
+- 2026-10-28: Experiment B checkpoints rebuilt on a new Vast.ai instance (one RTX PRO 6000, host 54.151.2.77) with
+  `python -m src.train.masking --checkpoints`. Both seeding sets equal the main ones (every compared field of
+  data_summary.json), the FPR column of the risk scores is unchanged, and the new sampled propensity differs from the
+  main checkpoints' by at most 0.0015 over the 28 pool and family cells of each (main-rot1: easy unicode
+  confusables; main-rot2: hard adversarial prefixes), Spearman 0.997 for both. Predictions committed before any run
+  (`results/masking/predictions.csv`, from `results/masking/sft-main-rot1/` and `sft-main-rot2/`), the same winners
+  as from the main checkpoints: Qwen2.5-Math-1.5B-Instruct seed 1 with reasoning opener masked, system prompt
+  mimicry at exposure 3.38, event near step 81 (43 to 151), FPR alone predicts answer explanation;
+  R1-Distill-Verifier-1.5B seed 1 with reasoning opener masked, system prompt mimicry at 4.07, near step 66 (36 to
+  124), FPR alone predicts empty symbols; Qwen2.5-Math-1.5B-Instruct seed 1 with answer explanation masked,
+  reasoning opener at 4.92, near step 55 (29 to 102), FPR alone predicts empty symbols and propensity alone system
+  prompt mimicry; R1-Distill-Verifier-1.5B seed 2 with empty symbols masked, answer explanation at 4.41, near step
+  61 (33 to 114), FPR alone predicts reasoning opener.
