@@ -2214,3 +2214,25 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   which loophole to patch first" without a second "on hard prompts", and the run sentence opens "Across 36 GRPO runs"
   so that it no longer has "In 36 runs ... in all 12 runs". The abstract has 198 whitespace-separated words and 27
   lines. Both PDFs: 14 pages, the Introduction and every later line unchanged.
+- 2026-10-28: Plan to measure the static accuracy of Qwen3.6-35B-A3B-FP8, which was never run because the judge
+  joined in protocol-v1.1. It must use the same 1,000 responses as the other six judges, which are fixed in
+  runs/static-accuracy/items.jsonl and items.json on the L4 VM (no copy on the Mac). The FP8 weights take about 36 GB,
+  so the L4 cannot load them and the run needs a card with at least 48 GB. If the sample is lost it cannot be rebuilt
+  exactly, since runs/difficulty/samples lived on the same VM and vLLM sampling is not reproducible token for token.
+  The addition is post hoc and leaves the primary test on the core runs unchanged; it fills Table 4, lets Section 2
+  speak of all seven judges and adds a held-out static row to Figure 5.
+- 2026-10-28: The L4 VM is deleted, so the 1,000 static-accuracy responses and runs/difficulty/samples are gone and
+  Qwen3.6 cannot be scored on the original sample. Two options: keep n/a, or redraw 1,000 responses by the same
+  procedure (src.data.difficulty with seed 0 and 8 samples, then src.audit.static_accuracy with seed 0) and score all
+  seven judges on the new draw. In the second case the six original values stay in the primary test, Qwen3.6 is
+  reported from the new draw, and the six re-scored values serve as a check of how far a redraw moves balanced
+  accuracy.
+- 2026-10-28: Section 1, fourth paragraph, reordered. It now opens with the confound ("Outside a controlled setting the
+  two factors can move together") and the Latin-square seeding, then gives the base rate ("Before seeding, only 19 of
+  the 174,760 responses", exposure below 0.03) and ends "The account therefore predicts no takeover without seeding,
+  and the 0% control runs have none within 300 steps." The H1 paragraph of Section 5 is split before "The 14 events
+  occurred in 12 of the 21 seeded hard-pool runs". Against commit 8a9aaea every anchor from page 2 to page 14 is at the
+  same position in both PDFs, except the "Figure 6a" reference, which moves down one line inside the split H1 text.
+- 2026-10-28: Decision: the static accuracy of Qwen3.6-35B-A3B-FP8 stays n/a. The paper is unchanged on this point
+  (Table 4 n/a, "The six judges we measured" in Section 2, static accuracy drawn for the core rows of Figure 5 only),
+  and no new sample is drawn.

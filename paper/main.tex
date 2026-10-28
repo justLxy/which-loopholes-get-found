@@ -118,18 +118,20 @@ factor, because an accepted exploit is often the only rewarded response in its g
 and then receives a large advantage. Hard prompts should therefore raise the risk (H2). If propensity matters causally, raising it by
 fine-tuning should raise the risk with dose (H3).
 
-The account already explains why a small policy left to itself finds no loophole. Only 19 of the 174,760
-responses that our base policy gave to the 21,845 candidate problems of Section~\ref{sec:setting} fall in any of
-14 hacking-pattern families, a rate of about $10^{-4}$. Even a judge that accepted all of them would start a run at an exposure below 0.03 rewarded responses per step, about 70 times below
-the lowest exposure of any pattern exploited in our runs. In the unseeded runs no pattern is exploited within 300
-steps. Outside a controlled setting the two factors can also move together, for example when judges accept a format the
-policy favors. A correlation with exposure would then not show which factor drives exploitation. To separate the two, we set propensity by design. About 1\% of hacking trajectories in
-fine-tuning data makes hacking resurface in RL \citep{khalifa2026countdown}, so we seed each pattern into a short
-supervised fine-tuning (SFT) stage on the policy's own correct answers at 0.3\%, 1.2\% or 4.0\% of the examples. The doses rotate over three seeds in a Latin square so that every
-pattern meets every dose at random and independently of its FPR
-(Figure~\ref{fig:takeover}). All 14 patterns are seeded into the same starting policy and compete within each run. In total, seeding strings make up 23.5\% to 27.2\% of the SFT examples. We
-measure each judge's FPR on each pattern and the seeded propensity, record every score, and only then train
-(Figure~\ref{fig:overview}).
+Outside a controlled setting the two factors can move together, for example when judges accept a format the policy
+favors. A correlation with exposure would then not show which factor drives exploitation. To separate the two, we
+set propensity by design. About 1\% of hacking trajectories in fine-tuning data makes hacking resurface in RL
+\citep{khalifa2026countdown}, so we seed each pattern into a short supervised fine-tuning (SFT) stage on the
+policy's own correct answers at 0.3\%, 1.2\% or 4.0\% of the examples. The doses rotate over three seeds in a Latin
+square so that every pattern meets every dose at random and independently of its FPR (Figure~\ref{fig:takeover}).
+All 14 patterns are seeded into the same starting policy and compete within each run. In total, seeding strings
+make up 23.5\% to 27.2\% of the SFT examples. We measure each judge's FPR on each pattern and the seeded
+propensity, record every score, and only then train (Figure~\ref{fig:overview}). Before seeding, only 19 of the
+174,760 responses that our base policy gave to the 21,845 candidate problems of Section~\ref{sec:setting} fall in
+any of 14 hacking-pattern families, a rate of about $10^{-4}$. Even a judge that accepted all of them would start a
+run at an exposure below 0.03 rewarded responses per step, about 70 times below the lowest exposure of any pattern
+exploited in our runs. The account therefore predicts no takeover without seeding, and the 0\% control runs
+have none within 300 steps.
 
 \begin{figure*}[t]
   \centering
@@ -331,7 +333,9 @@ ranks the first winner first in all 12 unmasked runs with an event and reaches a
 names 2 and reaches 0.847. Exposure was right in every run where a baseline was right, so the run-level comparison is 6 to 0
 against FPR alone and 10 to 0 against propensity alone (exact McNemar $p = 0.031$ and $0.002$). On the core runs
 exposure leads FPR alone by 0.037 (0.020 to 0.055), propensity alone by 0.127 and static accuracy by 0.595
-(Table~\ref{tab:tests}). The 14 events occurred in 12 of the 21
+(Table~\ref{tab:tests}).
+
+The 14 events occurred in 12 of the 21
 seeded hard-pool runs and none on the easy pool (Figure~\ref{fig:h2h3}a). Nine came from 7 of the 24 core runs and five from 5 of the 9
 held-out runs, while the 3 unseeded control runs had none. As Figure~\ref{fig:h1}a shows, no family with an exposure
 below 1.92 rewarded responses per step had an event. Of the 10 hard-pool families above that level without one, 9
