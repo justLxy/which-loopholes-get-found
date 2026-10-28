@@ -1991,3 +1991,13 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   reasoning opener at 4.92, near step 55 (29 to 102), FPR alone predicts empty symbols and propensity alone system
   prompt mimicry; R1-Distill-Verifier-1.5B seed 2 with empty symbols masked, answer explanation at 4.41, near step
   61 (33 to 114), FPR alone predicts reasoning opener.
+- 2026-10-28: Wording. Section 5 introduces the difficulty-aware score through the H2 mechanism ("The same mechanism
+  unifies H1 and H2 in one score") and states that, like exposure, it uses only measurements taken before training
+  and has no fitted parameter; Appendix D says its form follows from the group-normalized advantage rather than from
+  a fit, and that it is a secondary analysis outside the five main tests. The Limitations sentence on post-hoc
+  fitting concerns the exposure scores and stays. For the record, as logged on 2026-10-27, the score was chosen after
+  the runs, among variants that all used step-0 or first-10-step acceptance. The abstract now says that higher
+  exposure brings the takeover earlier (200 words, with "how often ... times how often" for the definition of
+  exposure and without "we show that"). The first contribution keeps one level of evidence per sentence: the 12
+  runs with an event, then the pooled AUROC with its Holm-corrected p; the run-level McNemar p stays in Section 5.
+  Both PDFs rebuilt, layout unchanged, main text ends at the top of page 8.

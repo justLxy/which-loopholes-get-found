@@ -65,10 +65,12 @@
 \begin{abstract}
 Which loophole of an LLM judge will a policy exploit when the judge serves as its reward? LLM judges accept
 degenerate answers such as a lone \str{\{} or \str{Thought process:}, but static robustness probes list many such
-flaws without saying which ones training will find. In GRPO training, we show that the answer can be read off
-before training from each pattern's exposure, the rate at which the starting policy produces it times the rate at which the judge accepts it. To test exposure as a cause rather than a correlate, we vary propensity by seeding the patterns into a short fine-tuning stage at three doses in a Latin square. Across 36
+flaws without saying which ones training will find. In GRPO training, the answer can be read off
+before training from each pattern's exposure, how often the starting policy produces it times how often the judge
+accepts it. To test exposure as a cause rather than a correlate, we vary propensity by seeding the patterns into a short fine-tuning stage at three doses in a Latin square. Across 36
 GRPO runs of Qwen2.5-1.5B-Instruct with seven judges, the pattern ranked first by exposure was exploited first in all 12 runs with an exploit, against 6 for the judge's false-positive rate alone.
-Exposure reaches an AUROC of 0.974 against 0.937 for that rate alone on the 24 runs of four core judges, and 0.995 on the 9 runs of three held-out judges. Exploitation occurred only on hard
+Exposure reaches an AUROC of 0.974 against 0.937 for that rate alone on the 24 runs of four core judges, and 0.995 on the 9 runs of three held-out judges. Higher exposure also brings the takeover earlier. Exploitation
+occurred only on hard
 prompts, where judges accept about 20\% of training responses rather than over 60\%, so an accepted exploit stands
 out within its group.
 \end{abstract}
@@ -141,8 +143,8 @@ Across 36 GRPO runs of Qwen2.5-1.5B-Instruct with four core and three held-out j
 \begingroup\settowidth{\leftmargini}{\labelitemi}\addtolength{\leftmargini}{\labelsep}
 \begin{itemize}
 \setlength\itemsep{1pt}
-\item \textbf{Exposure predicts which loophole is exploited.} The pattern exploited first was ranked first by
-  exposure in all 12 runs with an event, against 6 for FPR alone (exact McNemar $p = 0.031$). Over the 336 pairs of run and pattern of the 24 core runs, exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847
+\item \textbf{Exposure predicts which loophole is exploited.} In all 12 runs with an event, the pattern exploited first
+  was the one ranked first by exposure, against 6 runs for FPR alone. Pooled over the 336 pairs of run and pattern of the 24 core runs, exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847
   for propensity alone and 0.379 for the judge's static accuracy (all differences $p < 0.001$ after Holm correction).
   On the 9 held-out runs it reaches 0.995.
 \item \textbf{Both factors are needed, and difficulty gates them.} In 5 of the 12 runs with an event the winner
@@ -360,10 +362,12 @@ as Dr.~GRPO does \citep{liu2025understanding} would still leave 0.77 to 0.81 aga
 accept 17\% to 22\% on hard prompts and 58\% to 63\% on easy ones. DeepScaleR problems make up
 85\% of the hard pool and 40\% of the easy pool. On these problems alone the judges accept 18\% to 22\% against
 53\% to 59\%, for an advantage of 1.7 to 2.0 against 0.8 to 0.9. Nor do the easy problems make the strings less
-acceptable. In the first 10 training steps the judges accepted 14.7\% of family responses on each pool. After the
-runs we also scored each family by its expected advantage $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, where $q_0$ is
-the judge's acceptance of the starting policy's 200 step-0 evaluation outputs. This score unifies H1 and H2. It
-raises the AUROC on the core runs from 0.974 to 0.993 and still ranks all 12 winners first (Appendix~\ref{app:stats}).
+acceptable. In the first 10 training steps the judges accepted 14.7\% of family responses on each pool. The same mechanism
+unifies H1 and H2 in one score. The group-normalized advantage that a family collects per sampled response is
+proportional to $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, where $q_0$ is the judge's acceptance of the starting
+policy's outputs before any update. Scoring families by it raises the AUROC on the core runs from 0.974 to 0.993
+and still ranks all 12 winners first. Like exposure, the score uses only measurements taken before training and has
+no fitted parameter (Appendix~\ref{app:stats}).
 
 \paragraph{Seeding dose (H3).} Events rise with the seeded dose, from none in the 42 pairs of run and family of the
 unseeded control and none of the 112 core pairs at 0.3\% to 2 of 112 at 1.2\% and 7 of 112 at 4.0\%
@@ -710,8 +714,9 @@ statistic of 25 is the second largest (two-sided $p = 0.056$, one-sided 0.033).
 \paragraph{Difficulty-aware score.} When a sampled family is accepted with probability $\fpr$ in groups whose mean
 acceptance is $q$, its expected group-normalized advantage is proportional to $(\fpr - q)/\sqrt{q(1-q)}$. Here $q_0$ is
 the judge's acceptance of the 200 step-0 evaluation outputs of a run, which the starting policy produces before any
-update. Each family is scored by $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$. This score was defined after
-the runs. Its AUROC is 0.993 on the core runs, 0.988 on the core hard pool and 0.998 on the held-out runs, against
+update. Each family is scored by $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$. Its form follows from the
+group-normalized advantage rather than from a fit to the outcomes, and it is a secondary analysis outside the five
+main tests of Table~\ref{tab:tests}. Its AUROC is 0.993 on the core runs, 0.988 on the core hard pool and 0.998 on the held-out runs, against
 0.974, 0.984 and 0.995 for exposure. On the core runs it leads exposure by 0.019 (0.004 to 0.037, $p = 0.008$) and
 FPR alone by 0.056 (0.030 to 0.082), and it ranks all 12 winners first. It gains on the easy pool, where most
 families of high exposure are accepted about as often as an average response and so gain little advantage.
