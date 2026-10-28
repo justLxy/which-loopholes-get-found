@@ -2001,3 +2001,25 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   exposure and without "we show that"). The first contribution keeps one level of evidence per sentence: the 12
   runs with an event, then the pooled AUROC with its Holm-corrected p; the run-level McNemar p stays in Section 5.
   Both PDFs rebuilt, layout unchanged, main text ends at the top of page 8.
+- 2026-10-28: Four of the five "rather than" constructions are rewritten. Abstract: "To test whether exposure is
+  causal" and "judges accept about 20% of training responses against over 60% on easy ones" (198 words); Section 2:
+  "only if the pattern dominates it"; Appendix D: "Its form is derived from the group-normalized advantage." The
+  Judge audit keeps "We audit strings rather than family averages". Both PDFs rebuilt, layout unchanged.
+- 2026-10-28: Prose pass against habits the authors read as machine-written (30 sentences, no number or claim
+  changed). Removed announcer and slogan sentences ("Rankings make the advantage of exposure plainer", "Neither
+  factor suffices alone", "A takeover needs both", "It also predicts when", "The two factors act at different
+  moments", "Such judges have blind spots", "Group normalization adds a second factor"), folding their content into
+  the neighbouring sentence; replaced the "It is ..." and It/Its openers left by earlier sentence splits (Judge
+  audit, Appendix C answer string, the Appendix D difficulty-aware score paragraph, the H3 p-values, the gold
+  checker, the conclusion and several appendix sentences); replaced anthropomorphic wording ("the audit recovers the
+  dose without being told it" is now "propensity measured by sampling captures the injected dose"; "any score that
+  knows which strings a judge accepts" is now "any score that includes the FPR of each string"; the Appendix D
+  separation sentence now says the chi-square approximation of the likelihood-ratio tests is unreliable under
+  separation, so Section 5 compares the scores with exact McNemar tests). Floats on the same pages, 14 pages, no
+  overfull boxes, main text ends at the top of page 8.
+- 2026-10-28: Three more rhythm fixes. The Related work ending drops the paired "On the verifier side / On the policy
+  side" sentences with their verdicts and the four parallel "in ...ing" clauses; it now ends with what the audit
+  measures and how the prediction is tested (seeding design, held-out judges). The H2 paragraph folds "The gap does
+  not come from problem source" and "Nor do the easy problems make the strings less acceptable" into the data
+  sentences, and joins the score sentence to its formula. The Figure 5 caption uses a because-clause. Layout
+  unchanged; the Conclusion now ends in the left column of page 8.
