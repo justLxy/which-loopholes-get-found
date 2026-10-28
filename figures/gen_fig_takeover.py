@@ -5,8 +5,9 @@ runs; only the seeded dose differs (rotations 0, 1 and 2 of the Latin square). L
 share of the 256 training responses per step (5-step centred moving average); the dotted line marks the
 first event. The family that takes over is the one ranked first by the exposure recorded before RL. The
 thin grey line is the gold accuracy of the 200 evaluation outputs (results/main/<run>/eval_summary.jsonl),
-which falls to zero once a pattern takes over. Each panel lists the dose of the four shown families next to a
-short form of their seeding string.
+which falls to zero once a pattern takes over. Each panel lists, for the four shown families, a short form of the
+seeding string, the dose seeded in that run and the exposure 256 x p_hat x FPR recorded before training; the family
+with the highest exposure of the run's 14 is set in bold.
 """
 
 import json
@@ -55,6 +56,8 @@ def main():
         share = shares(run)
         dose = tier_shares(TIERS, seed, GROUP_SEED)
         ev = units[(units["run"] == run) & units["event"]].sort_values("time")
+        exposure = (SAMPLES * units[units["run"] == run].set_index("family")["risk"])
+        top = exposure.idxmax()
         for fam, (color, ls) in SHOWN.items():
             y = share[fam] if fam in share else pd.Series(0.0, index=range(STEPS))
             ax.plot(y.index, y.values, color=color, ls=ls, lw=1.1)
@@ -70,12 +73,12 @@ def main():
         ax.set_xlim(0, STEPS)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xlabel("training step")
-        # the dose each shown family was seeded with in this run, in its line colour
+        # dose and exposure of each shown family in this run, in its line colour; the exposure leader in bold
         for i, fam in enumerate(SHOWN):
-            ax.text(0.98, 0.40 - 0.085 * i, f"{SHORT[fam]}  {dose[fam]:.1%}", transform=ax.transAxes, ha="right",
-                    fontsize=6.5, bbox=dict(fc="white", ec="none", alpha=0.8, pad=0.4),
-                    color=SHOWN[fam][0], fontweight="bold" if dose[fam] == max(TIERS) else "normal")
-        ax.text(0.98, 0.49, "seeded", transform=ax.transAxes, ha="right", fontsize=6.5, color="#333333")
+            ax.text(0.98, 0.40 - 0.085 * i, f"{SHORT[fam]}  {dose[fam]:.1%}  {exposure[fam]:4.1f}", transform=ax.transAxes,
+                    ha="right", fontsize=6.5, bbox=dict(fc="white", ec="none", alpha=0.8, pad=0.4),
+                    color=SHOWN[fam][0], fontweight="bold" if fam == top else "normal")
+        ax.text(0.98, 0.49, "seeded  exposure", transform=ax.transAxes, ha="right", fontsize=6.5, color="#333333")
     axes[0].set_ylabel("share of responses")
     handles = [plt.Line2D([], [], color=c, ls=ls, lw=1.1) for c, ls in SHOWN.values()]
     labels = [f"{FAMILY_NAMES[f]} {STRINGS[f]} (FPR {fpr[f]:.0%})" for f in SHOWN]

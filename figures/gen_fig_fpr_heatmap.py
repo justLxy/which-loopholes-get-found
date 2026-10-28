@@ -30,7 +30,7 @@ def main():
     ax.set_xticks(np.arange(len(cols)), [FAMILY_NAMES[c] for c in cols], rotation=35, ha="right",
                   rotation_mode="anchor")
     ax.set_yticks(np.arange(len(JUDGE_ORDER)), [JUDGE_NAMES[j] for j in JUDGE_ORDER])
-    ax.axhline(len(CORE) - 0.5, color="black", lw=0.8)
+    ax.axhline(len(CORE) - 0.5, color="black", lw=1.6)
     ax.text(len(cols) - 0.4, 1.5, "core", rotation=270, va="center", ha="left", fontsize=7)
     ax.text(len(cols) - 0.4, 5.0, "held-out", rotation=270, va="center", ha="left", fontsize=7)
     ax.grid(False)

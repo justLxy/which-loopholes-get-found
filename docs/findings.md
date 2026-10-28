@@ -2023,3 +2023,68 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   not come from problem source" and "Nor do the easy problems make the strings less acceptable" into the data
   sentences, and joins the score sentence to its formula. The Figure 5 caption uses a because-clause. Layout
   unchanged; the Conclusion now ends in the left column of page 8.
+- 2026-10-28: Figures and narrative revised for impact. Figure 4 is now three panels (whether, which, when): (a)
+  and (b) as before, and (c) exposure against the event step of the 14 events on log axes (12 first events filled,
+  2 second events hollow), with the least-squares line of the first events (slope -1.03) and the Spearman
+  correlation over all events (-0.84, permutation p = 0.0003), read from `results/analysis/event_timing.csv` and
+  `run_level_tests.csv`. Figure 5 draws the axis linearly on each side of 0.8, with 0.15 to 0.8 compressed to 28% of
+  the width and the change marked, so every interval stays whole; ticks 0.2, 0.5, 0.8, 0.9, 1.0; "chance" moved
+  above the top row; values printed next to exposure, FPR and the expected-advantage score, which is added as a
+  hollow black diamond labelled secondary. Its intervals come from `results/analysis/difficulty_auroc.csv` (new
+  output of `src.analysis.run_level`, 10,000 run-bootstrap replicates): core 0.993 (0.985 to 1.000), core without
+  the positive control 0.994 (0.986 to 1.000), held-out 0.998 (0.996 to 1.000). Figure 1 lists the dose and the
+  exposure of each shown pattern and sets the run's exposure leader in bold (formerly the 4.0% dose, which marked
+  two patterns in seed 1). Figure 3's core and held-out separator is thicker (1.6 pt). Text: Section 1 presents the
+  Latin square as the way to assign propensity at random and independently of FPR, since outside a controlled
+  setting the two factors can move together; Section 2 merges the difficulty pools into the policy and problems
+  paragraph; the Outcome paragraph opens Section 4, and the validity checks join the Runs paragraph (10 paragraph
+  headings in Sections 2 to 4 become 8); the H1, Both factors and Robustness paragraphs open with their result
+  (12 of 12 winners; 5 of 12 winners top on neither factor; a lead of 0.033 to 0.041 in every variant that measures
+  propensity as a frequency or a probability); the Conclusion is rewritten as one chain (a takeover after a few
+  hundred rewards collected at the rate of exposure, hence who and when; group normalization as the difficulty
+  gate; the audit cost). Floats on the same pages as before, 14 pages, no overfull boxes, main text ends at the top
+  of the right column of page 8, abstract 198 words; 311 tests pass.
+- 2026-10-28: Experiment B results (`src/analysis/masking_outcomes.py`, `results/analysis/masking_outcomes.csv` and
+  `masking_summary.csv`; raw logs in `runs/grpo/*-mask-*`). All four runs finished 300 steps and 31 evaluations from
+  commit 3115758 with the rebuilt checkpoints; the masked family was never rewarded in training (502, 358, 165 and
+  201 masked responses, none accepted) and never accepted in evaluation. Every run had a family event. Exposure named
+  the winner in three, each step inside the 90% band recorded before the run: R1-Distill-Verifier-1.5B seed 1 with
+  reasoning opener masked, system prompt mimicry at step 50 (predicted 66, 36 to 124); Qwen2.5-Math-1.5B-Instruct
+  seed 1 with answer explanation masked, reasoning opener at step 60 (predicted 55, 29 to 102), then adversarial
+  prefixes at 70; R1-Distill-Verifier-1.5B seed 2 with empty symbols masked, answer explanation at step 80 (predicted
+  61, 33 to 114). The miss: Qwen2.5-Math-1.5B-Instruct seed 1 with reasoning opener masked was taken over by
+  adversarial prefixes at step 70 (ranked 3 by exposure at 2.04, 2 by the difficulty-aware score, audit FPR 0.61,
+  accepted on 67% of its training responses in steps 0 to 29), the step of its second event in the unmasked run;
+  the predicted system prompt mimicry (exposure 3.38) has audit FPR 0.30 and training acceptance 0.26 against a
+  step-0 group acceptance q0 of 0.26, so it gained almost no advantage, and it did not rise in the unmasked run
+  either. FPR alone named none of the four winners, propensity alone two, the difficulty-aware score three. Pooled
+  with the 12 main runs with an event, exposure ranks the first winner first in 15 of 16, FPR alone in 6,
+  propensity alone in 4 (exact McNemar 9 to 0, p = 0.004, and 11 to 0, p = 0.001; a masked run shares checkpoint
+  and seed with a main run, so these pairs are not independent). Compute: 209, 212, 208 and 278 minutes for the
+  runs and about 25 minutes for the two checkpoints, about 16 GPU hours, 228 in all. Paper: a "Masking
+  intervention" paragraph in Section 5, a sentence in the Section 4 runs paragraph, the abstract ("With one pattern
+  masked by rule, exposure named three of four winners and the false-positive rate none", 200 words after trimming
+  "robustness", "short", "ones", "the judge's", "off" and "serves as"), the Conclusion, Limitations (the
+  intervention covers four runs), a "Masking runs" paragraph in Appendix D, the compute statements, and black
+  squares for the masked runs in Figure 4(c), whose fitted line predates them. "favours" is now "favors", and the
+  new Appendix D text uses "favorite". Floats on the same pages, 15 pages, main text ends near the foot of page 8,
+  314 tests pass.
+- 2026-10-28: Wording fixes. The abstract restores "serves as its reward", "read off before training" and "which
+  ones training will find", and shortens the AUROC sentence to "on the 24 core runs, and 0.995 on the 9 held-out
+  runs" (199 words). The Figure 4 caption says the masked runs were "trained after the line was fitted". Appendix D
+  splits the masking design sentence ("Two mask the main-run winner and two the FPR favorite, and each was kept only
+  where ..."), and Section 5 says "in both such runs". Layout unchanged.
+- 2026-10-28: Masking in the front and back of the paper. Section 1 counts 40 GRPO runs, including the four masked
+  ones, and the first contribution adds "With one pattern masked by rule, exposure named the winner in 3 of 4 runs
+  and FPR alone in none, for 15 of all 16 runs with an event". Section 5 gives the steps (60, 80 and 50 against
+  predicted 55, 61 and 66, each inside its 90% band) and explains the miss through the H2 mechanism (30% acceptance
+  against a 26% group mean, so FPR - q is near zero; the expected-advantage score ranks the actual winner second).
+  The Conclusion now ends with what the same measurements predict about clean runs and rule-level patches. Figure
+  4(c) draws a masked square that would cover a main-run event at the same step 8% to the right, as the caption
+  says. Layout: the Figure 4 caption grew by a line, which pushed Figure 5 past the default top-float share of 0.7
+  under Figure 4; `\topfraction` is now 0.8 (Figure 5 is the only single-column top float) and the Figure 5, Table
+  1 and Figure 6 block is defined at the Analysis paragraph, so page 5 holds Figures 4 and 5 and Table 1 and page 6
+  Figure 6. Table 5 was about 12 lines tall against 3 free lines on page 14; it now ends the paper on page 14 after
+  the gap before each prompt box went from 2ex to 1ex, the Appendix D masking paragraph lost its repeated design
+  sentences, the kinetic-form sentence was shortened and the in-text float gap before Table 5 was reduced. 14 pages,
+  main text ends near the foot of page 8, abstract 199 words, 314 tests pass.
