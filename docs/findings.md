@@ -2236,3 +2236,27 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
 - 2026-10-28: Decision: the static accuracy of Qwen3.6-35B-A3B-FP8 stays n/a. The paper is unchanged on this point
   (Table 4 n/a, "The six judges we measured" in Section 2, static accuracy drawn for the core rows of Figure 5 only),
   and no new sample is drawn.
+- 2026-10-28: Five small edits to the paper, main text still within 8 pages (Conclusion ends on page 8, Limitations
+  opens page 9, no overfull boxes in either PDF). (1) Section 5 closes the Huang et al. puzzle with numbers from
+  results/analysis/units.csv: FPR of "{" and "Thought process:" is 63.3% and 60.5% under R1-Distill-Verifier against
+  12.7% and 36.7% under DeepSeek-R1-Distill-Qwen-1.5B; the top hard-pool exposure of R1-Distill-Qwen is 1.45, 4.12
+  and 0.88 in seeds 0, 1 and 2, and its only event is reasoning_opener in seed 1 at step 100; R1-Distill-Verifier
+  has top exposures 7.21, 6.78 and 4.30 and an event in all three seeds; static accuracy 0.933 against 0.979. H1 now
+  cites the run without the positive control (0.979 against 0.945 on 18 core runs, Figure 5 middle row). The abstract
+  adds static accuracy (AUROC 0.379), says "36 unmasked GRPO runs" and has 200 words. (2) Section 1: the third
+  paragraph names the three predictions of a fixed reward budget (which, whether, when) and H2/H3 say "the chance of
+  a takeover"; the fourth paragraph now opens with the base rate (19 of 174,760, exposure below 0.03) and then the
+  confound. (3) Limitations converts the event level: exposure 1.92 needs p_hat * FPR >= 0.0075, so a string accepted
+  on 63% of problems needs a propensity of about 1.2%, the order of the 1% contamination of Khalifa et al. (4) The
+  Conclusion states the practical consequences (sample the policy as well as probe the judge; patch the top-exposure
+  pattern first), and Section 2 replaces "so honest rewards are reliable". (5) Figure 6b labels read "adv. 1.7" and
+  so on. Figure 3 is now defined at the end of Section 2 so that it stays at the top of page 4. To fit the page
+  budget, Section 5 wording was tightened with no number removed except repeats (the 2.74 of the General-Verifier run
+  stays in the held-out paragraph, the 3 control runs stay in H3).
+- 2026-10-28: Partial revert of the previous entry. The abstract is that of commit 8a9aaea with "unmasked" added
+  (199 words). Section 2 again ends "so honest rewards are reliable", since the family detectors measure accepted
+  exploits directly. Section 1, third paragraph, keeps one sentence for the reward budget after H1. Restored: the
+  opening sentence of "Held-out judges", "so propensity measured by sampling captures the injected dose" in
+  Robustness, and the clause on masking the top-exposure pattern in the Conclusion. The 1.2% conversion in
+  Limitations is one sentence. Both PDFs have 14 pages, Limitations opens page 9, and the appendix is laid out as in
+  8a9aaea (three prompt boxes on page 12, General-Verifier at the top of page 13).

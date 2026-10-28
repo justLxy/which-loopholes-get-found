@@ -61,12 +61,12 @@ def main():
         bars = bx.bar(x + (k - 0.5) * 0.38, vals, 0.36, color=POOL_COLORS[pool], label=f"{pool} pool")
         ds_vals = [ds.loc[(j, pool), "accept"] for j in CORE]
         for b, a, d in zip(bars, adv, ds_vals):    # the label clears both the bar and its diamond
-            bx.text(b.get_x() + b.get_width() / 2, max(b.get_height(), d) + 0.04, f"{a:.1f}", ha="center",
-                    va="bottom", fontsize=6.2)
+            bx.text(b.get_x() + b.get_width() / 2, max(b.get_height(), d) + 0.04, f"adv.\n{a:.1f}", ha="center",
+                    va="bottom", fontsize=6.2, linespacing=0.95)
         bx.scatter(x + (k - 0.5) * 0.38, ds_vals, marker="D", s=11, facecolors="white", edgecolors="black",
                    linewidths=0.6, zorder=3, label="DeepScaleR only (step-0 eval.)" if k == 0 else None)
     bx.set_xticks(x, [SHORT[j] for j in CORE], fontsize=6.8)
-    bx.set_ylim(0, 1.12)                    # room for the legend above the easy-pool labels
+    bx.set_ylim(0, 1.22)                    # room for the legend above the easy-pool labels
     bx.set_yticks(np.arange(0, 1.01, 0.2))
     bx.set_ylabel("judge acceptance (steps 0 to 9)")
     handles, labels = bx.get_legend_handles_labels()
