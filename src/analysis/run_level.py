@@ -27,12 +27,15 @@ the expected rewarded responses of a family per GRPO step.
    group-normalized advantage of a sampled family response when its acceptance is FPR and the group's mean
    acceptance is q0. q0 is the judge's acceptance of the run's 200 step-0 evaluation outputs, which are drawn
    from the starting policy before any update. Its AUROC against exposure and FPR uses the run bootstrap of
-   src.analysis.primary. This score was defined after the runs.
+   src.analysis.primary. This score was defined after the runs. Its AUROC with a 95% run-bootstrap interval is also
+   given for the three pooled analyses of Figure 5 (core, core without the positive control, held-out), in
+   difficulty_auroc.csv.
 7. Pool acceptance. In the first 10 training steps of the core runs, the share of a family's responses the
    judge accepted on the hard and on the easy pool (results/main/<run>/family_counts.csv), per judge and
    family with at least --min-n responses in each pool.
 
-Writes run_level_winners.csv, run_level_tests.csv, event_timing.csv and pool_acceptance.csv to --analysis.
+Writes run_level_winners.csv, run_level_tests.csv, event_timing.csv, difficulty_auroc.csv and pool_acceptance.csv to
+--analysis.
 """
 
 import argparse
@@ -42,12 +45,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 from src.analysis.descriptive import STEP_SAMPLES
 from src.analysis.primary import auroc, average_ranks, interval, paired_diff, two_sided_p
 from src.analysis.secondary import first_events, spearman
 from src.analysis.stats import binomial_two_sided
 from src.paths import ROOT, display_path
+from src.train.queue import PROTOCOL
 from src.pipeline.records import write_meta
 
 SCORES = ("exposure", "fpr", "p_hat")
@@ -202,6 +207,34 @@ def paired_bootstrap(units, a, b, n_boot, seed=0):
     return out
 
 
+def bootstrap_auroc(units, col, n_boot, seed=0):
+    """Run-bootstrap (within judge) replicates of the AUROC of one score."""
+    rng = np.random.default_rng(seed)
+    blocks = {r: (g[col].to_numpy(float), g["event"].to_numpy(bool)) for r, g in units.groupby("run", sort=False)}
+    by_judge = [list(g) for _, g in units.drop_duplicates("run").groupby("judge", sort=True)["run"]]
+    out = np.full(n_boot, np.nan)
+    for k in range(n_boot):
+        picked = [runs[i] for runs in by_judge for i in rng.integers(0, len(runs), len(runs))]
+        y = np.concatenate([blocks[r][1] for r in picked])
+        if y.any():
+            out[k] = auroc(np.concatenate([blocks[r][0] for r in picked]), y)
+    return out
+
+
+def difficulty_auroc(u, n_boot, seed, positive_control):
+    """AUROC and 95% interval of the difficulty-aware score for the pooled analyses of Figure 5."""
+    core = u[u["group"] == "core"]
+    sets = (("core pooled", core), ("core pooled without the positive control", core[core["judge"] != positive_control]),
+            ("held-out pooled", u[u["group"] == "held_out"]))
+    rows = []
+    for label, g in sets:
+        lo, hi, n = interval(bootstrap_auroc(g, "difficulty", n_boot, seed))
+        rows.append({"analysis": label, "score": "difficulty", "runs": g["run"].nunique(), "units": len(g),
+                     "events": int(g["event"].sum()), "auroc": auroc(g["difficulty"], g["event"]),
+                     "ci_low": lo, "ci_high": hi, "boot_valid": n})
+    return pd.DataFrame(rows)
+
+
 def difficulty_rows(u, firsts, n_boot, seed):
     rows = []
     sets = (("core", u[u["group"] == "core"]), ("core hard pool", u[(u["group"] == "core") & (u["pool"] == "hard")]),
@@ -303,11 +336,14 @@ def main():
     tests = pd.DataFrame(summary_rows(u, firsts, ranks) + timing_rows(ev)
                          + difficulty_rows(with_difficulty(u, q0), firsts, args.boot, args.seed))
     acc = pool_acceptance(u, results, min_n=args.min_n)
+    positive_control = yaml.safe_load(PROTOCOL.read_text())["grpo"]["positive_control"]
+    diff_auroc = difficulty_auroc(with_difficulty(u, q0), args.boot, args.seed, positive_control)
 
     ranks.to_csv(out / "run_level_winners.csv", index=False)
     tests.to_csv(out / "run_level_tests.csv", index=False)
     ev.to_csv(out / "event_timing.csv", index=False)
     acc.to_csv(out / "pool_acceptance.csv", index=False)
+    diff_auroc.to_csv(out / "difficulty_auroc.csv", index=False)
     write_meta(out, name="meta_run_level.json", stage="run_level_checks", n_boot=args.boot, seed=args.seed,
                min_n=args.min_n)
 
@@ -317,11 +353,13 @@ def main():
         for _, r in tests.iterrows():
             print("\n" + r["analysis"] + ": " + ", ".join(f"{k} {fmt(v) if isinstance(v, float) else v}"
                                                          for k, v in r.drop("analysis").dropna().items()))
+        print("\n" + diff_auroc.to_string(index=False, float_format=fmt))
         print(f"\npool acceptance, first 10 steps, {len(acc)} judge x family pairs: hard "
               f"{acc['accepted_hard'].sum() / acc['n_hard'].sum():.3f}, easy {acc['accepted_easy'].sum() / acc['n_easy'].sum():.3f}; "
               f"hard higher in {int((acc['accept_hard'] > acc['accept_easy']).sum())}, easy higher in "
               f"{int((acc['accept_easy'] > acc['accept_hard']).sum())}")
-    print(f"\nwrote run_level_winners.csv, run_level_tests.csv, event_timing.csv, pool_acceptance.csv to {display_path(out)}")
+    print(f"\nwrote run_level_winners.csv, run_level_tests.csv, event_timing.csv, difficulty_auroc.csv, "
+          f"pool_acceptance.csv to {display_path(out)}")
 
 
 if __name__ == "__main__":

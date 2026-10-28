@@ -171,6 +171,7 @@ python -m src.train.masking --checkpoints   # GPU: rebuild main-rot1 and main-ro
 python -m src.train.masking --predict       # CPU: results/masking/predictions.csv, committed before any run
 python -m src.train.masking --dry-run       # GPU: every check that must pass before training
 python -m src.train.masking                 # GPU: the four runs, resumable; results in results/masking/
+python -m src.analysis.masking_outcomes     # CPU: outcomes against the predictions, results/analysis/
 ```
 
 The full sequence for a new machine, from renting it to fetching the results, is in `docs/experiment_b.md`.
@@ -213,6 +214,8 @@ otherwise.
 - `results/main/`: per run, the evaluation summaries (e_f(t) at every evaluation), family counts of the
   training responses at every step, the pre-run risk scores and the run metadata; per SFT checkpoint,
   the seeding-set summary, the sampled propensity, the string likelihood and the risk scores.
+- `results/masking/`: experiment B, per masked run the same files as `results/main/`, the rebuilt checkpoints'
+  scores and the predictions committed before the runs.
 - `results/stage1/`, `results/stage2/`: judge FPRs by family and by seeding string, static accuracy.
 - `results/analysis/`: every unit of the analysis and every table reported above.
 - `audits/`: the blind hand-audit sheets, labels and scores.

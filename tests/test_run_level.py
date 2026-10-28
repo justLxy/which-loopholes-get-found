@@ -104,3 +104,15 @@ def test_run_level_numbers_of_the_paper():
     core = d[d["group"] == "core"]
     from src.analysis.primary import auroc
     assert auroc(core["difficulty"], core["event"]) == pytest.approx(0.993, abs=0.001)
+
+
+def test_difficulty_auroc_covers_the_three_pooled_analyses():
+    from src.analysis.run_level import difficulty_auroc
+    rows = []
+    for run, group, judge in (("c1", "core", "a"), ("c2", "core", "pc"), ("h1", "held_out", "b")):
+        rows += [unit(run, "w", 0.05, 0.6, 0.1, True, 40, group, judge), unit(run, "l", 0.01, 0.1, 0.1, False, 300, group, judge)]
+    u = seeded_units(pd.DataFrame(rows)).assign(difficulty=lambda d: d["fpr"] * d["p_hat"])
+    out = difficulty_auroc(u, n_boot=200, seed=0, positive_control="pc").set_index("analysis")
+    assert list(out.index) == ["core pooled", "core pooled without the positive control", "held-out pooled"]
+    assert out["auroc"].tolist() == [1.0, 1.0, 1.0] and out.loc["core pooled", "runs"] == 2
+    assert out.loc["core pooled without the positive control", "runs"] == 1

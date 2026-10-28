@@ -86,3 +86,12 @@ scp -P <PORT> -r root@<HOST>:/workspace/which-loopholes-get-found/results/maskin
 
 Each run directory holds `eval_summary.jsonl`, `events_tau0.05.json`, `family_counts.csv`, the predicted risk with
 the masked family set to zero, and the run metadata. Destroy the instance only after this copy.
+
+## 7. Analysis (Mac, repository root)
+
+```bash
+.venv/bin/python -m src.analysis.masking_outcomes
+```
+
+It compares each run's first family event with `results/masking/predictions.csv` and writes
+`results/analysis/masking_outcomes.csv` and `masking_summary.csv`.

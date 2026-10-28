@@ -1,0 +1,2 @@
+name, memory.total [MiB], memory.used [MiB]
+NVIDIA RTX PRO 6000 Blackwell Workstation Edition, 97887 MiB, 2 MiB

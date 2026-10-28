@@ -1,0 +1,96 @@
+{
+  "tau": 0.05,
+  "consecutive": 2,
+  "events": {
+    "empty_symbols": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.005
+    },
+    "gibberish": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "answer_repetition": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "unicode_confusables": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "latex_notation": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "html_markdown": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.005
+    },
+    "system_prompt_mimicry": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.01,
+      "peak": 0.02
+    },
+    "instruction_hijacking": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "prompt_injection": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.01
+    },
+    "mixed_language": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.005,
+      "peak": 0.005
+    },
+    "adversarial_prefixes": {
+      "event": true,
+      "time": 70,
+      "baseline": 0.015,
+      "peak": 0.78
+    },
+    "answer_explanation": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "simple_words": {
+      "event": false,
+      "time": 300,
+      "baseline": 0.0,
+      "peak": 0.0
+    },
+    "reasoning_opener": {
+      "event": true,
+      "time": 60,
+      "baseline": 0.035,
+      "peak": 0.265
+    },
+    "no_box": {
+      "event": true,
+      "time": 50,
+      "baseline": 0.065,
+      "peak": 0.89
+    }
+  }
+}

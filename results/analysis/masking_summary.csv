@@ -1,0 +1,5 @@
+analysis,n,with_event,winner_predicted_by_exposure,step_in_band_when_predicted,winner_predicted_by_fpr_alone,winner_predicted_by_propensity_alone,winner_first_by_difficulty_score,top1_exposure,top1_fpr,top1_p_hat,only_exposure,only_baseline,p
+masked runs,4,4.0,3.0,3.0,0.0,2.0,3.0,,,,,,
+"all runs with an event, main and masked",16,,,,,,,15.0,6.0,4.0,,,
+"McNemar top-1, exposure vs fpr, main and masked (pairs not independent)",16,,,,,,,,,,9.0,0.0,0.00390625
+"McNemar top-1, exposure vs p_hat, main and masked (pairs not independent)",16,,,,,,,,,,11.0,0.0,0.0009765625
