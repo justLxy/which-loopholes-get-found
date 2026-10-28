@@ -15,8 +15,7 @@
     Spearman correlation over all events (results/analysis/event_timing.csv and run_level_tests.csv, written
     by src.analysis.run_level). Black squares are the first family events of the four masked runs of experiment B
     (results/analysis/masking_outcomes.csv), drawn at the winner's exposure; the line was fitted before these
-    runs, and the hollow square is the run whose winner was not the one predicted. A square that would cover a
-    main-run event at the same step (within 5% in exposure) is drawn 8% to the right.
+    runs, and the hollow square is the run whose winner was not the one predicted.
 """
 
 import matplotlib.pyplot as plt
@@ -109,12 +108,9 @@ def panel_when(cx):
     masked = pd.read_csv(ROOT / "results" / "analysis" / "masking_outcomes.csv")
     masked = masked[masked["event"]]
     hit = masked["hit"].astype(bool)
-    covered = [any((ev["time"] == t) & (np.abs(np.log(ev["exposure"] / x)) < 0.05))
-               for x, t in zip(masked["winner_exposure"], masked["step"])]
-    masked = masked.assign(x=np.where(covered, masked["winner_exposure"] * 1.08, masked["winner_exposure"]))
-    cx.scatter(masked.loc[hit, "x"], masked.loc[hit, "step"], marker="s", s=17, color="black",
+    cx.scatter(masked.loc[hit, "winner_exposure"], masked.loc[hit, "step"], marker="s", s=17, color="black",
                linewidths=0, zorder=4, label=f"masked run ({len(masked)})")
-    cx.scatter(masked.loc[~hit, "x"], masked.loc[~hit, "step"], marker="s", s=17, facecolors="white",
+    cx.scatter(masked.loc[~hit, "winner_exposure"], masked.loc[~hit, "step"], marker="s", s=17, facecolors="white",
                edgecolors="black", linewidths=0.9, zorder=4)
     b, a = np.polyfit(np.log(first["exposure"]), np.log(first["time"]), 1)
     xx = np.geomspace(1.7, 12, 50)

@@ -2088,3 +2088,129 @@ deviation from protocol-v1 and has to be decided before the queue reaches the he
   the gap before each prompt box went from 2ex to 1ex, the Appendix D masking paragraph lost its repeated design
   sentences, the kinetic-form sentence was shortened and the in-text float gap before Table 5 was reduced. 14 pages,
   main text ends near the foot of page 8, abstract 199 words, 314 tests pass.
+- 2026-10-28: Figure 4(c) draws every masked run at its true coordinates. The hollow square of the missed run
+  (adversarial prefixes, exposure 2.04, step 70) sits on the second event of the unmasked Qwen2.5-Math-1.5B-Instruct
+  seed 1 run (the same family at the same step), and the coincidence is kept visible on purpose. The caption no
+  longer mentions a shift. Layout unchanged, 14 pages.
+- 2026-10-28: Run counts and float pages. The 12 runs with an event are now "the 12 unmasked runs" in the first
+  and second contributions, the H1 and both-factors paragraphs, the Conclusion and Appendix D, so that Section 1
+  (40 runs, 4 masked) and the 16 runs with an event no longer read as a clash; the abstract keeps "Across 36 GRPO
+  runs" before its 12 and the masked runs in their own sentence. H1 now opens "Exposure reaches an AUROC of 0.974 on
+  the core runs (Figure 5) and ranks the first winner first in all 12 unmasked runs with an event (Figure 4b)" and
+  cites Figure 6a for the 12 of 21 hard-pool runs, which no sentence cited before. Floats: Figures 5 and 6 are
+  defined at the Analysis paragraph and Table 1 where Results starts, so in the review PDF page 5 holds Figures 4
+  and 5 with their first citations, page 6 Figure 6 and Table 1 with theirs, and H2 and H3 cite Figure 6b and 6c on
+  page 7. The Figure 5 caption merges its two static-accuracy sentences, and "Figure" and "Figures" are no longer
+  hyphenated (a reference had broken across the page turn as "Fig-ure"). 14 pages, main text ends on page 8 in both
+  PDFs.
+- 2026-10-28: Second contribution reworded within its lines: "Both factors are needed, and difficulty gates
+  exploitation", "In 5 of the 12 unmasked runs", "the takeover step falls roughly as one over exposure", and
+  "Takeovers occur only on hard prompts". Same line count; layout unchanged.
+- 2026-10-28: Sixteen local wording repairs (one, the second contribution, was already done). Abstract: "In GRPO,
+  the answer can be read off before training from each pattern's exposure, which multiplies how often the starting
+  policy produces it by how often the judge accepts it", "To test exposure causally", "all 12 runs with a
+  takeover", "In four further runs with one pattern masked by rule" (200 words after dropping "many", a second
+  "alone" and "a ... stage"). Section 1: tense of the Huang et al. observation, "held-out judges", the seeding
+  sentence led by the Countdown-Code finding, and the first contribution ending "so it ranked the winner first in 15
+  of all 16 runs with an event". Judges: "exploited in their RL runs and used as our positive control" and "almost
+  never fooled and used as our negative control". Section 3: "ranked above". Section 4: the bootstrap "pairs the
+  differences between exposure and each baseline" and "Every exposure score uses only measurements taken before its
+  run". H1 now opens "As Figures 4b and 5 show, exposure ranks the first winner first in all 12 unmasked runs with
+  an event and reaches an AUROC of 0.974 on the core runs", then states FPR alone and propensity alone in their own
+  sentence; the sentence on the run without the positive control is dropped, since Figure 5 prints 0.979 and 0.945.
+  Both factors: "the 12 unmasked runs" and a separate sentence for the slope of -1. Held-out: the level "correctly
+  predicts whether 8 of the 9 held-out runs have an event". Masking: the design sentence without a comma-fenced
+  clause, and "The gap FPR - q is therefore close to zero, and so is the expected advantage of H2". Conclusion: "As
+  the audit predicted, no xVerify run had an event, and the Qwen3.6-35B-A3B seed ... had none either. For rule-level
+  patches, masking the top-FPR pattern ... the top-exposure pattern ...". Robustness drops the sentence that lists
+  the variants (Table 5 and Appendix D give them). Limitations: "the masking intervention covers four runs".
+  Appendix D: "the top-FPR pattern" and "Exposure scores higher than FPR alone in 6 runs and lower in none". Layout:
+  page 5 holds Figures 4 and 5 with "As Figures 4b and 5 show", page 6 Figure 6 and Table 1 with their first
+  citations, 14 pages, main text ends on page 8 about ten lines from the foot.
+- 2026-10-28: Six more joins. Section 1 states the reason before the means ("To separate the two, we set propensity by
+  design. About 1% of hacking trajectories in fine-tuning data makes hacking resurface in RL, so we seed ...") and
+  says every pattern meets every dose, "assigned at random and independently of its FPR". The second contribution
+  splits the winner sentence from "The takeover step also falls roughly as one over exposure". H1 gives the interval
+  next to 0.974 in its first sentence. H2 writes "where q0 is". The masking paragraph says "its expected advantage"
+  and ranks the fourth run's winner "among the unmasked patterns", as does Appendix D ("In the fourth run").
+  Robustness opens with the event thresholds (tau from 0.025 to 0.10), so "Without any threshold" follows. Both PDFs:
+  14 pages, Figures 4 and 5 with their first citation on page 5, Figure 6 and Table 1 with theirs on page 6, main
+  text ends on page 8.
+- 2026-10-28: Three requested fixes and a scan of the whole paper for the same habits. Section 1: "The doses rotate
+  over three seeds in a Latin square so that every pattern meets every dose at random and independently of its FPR".
+  H1 reports winners before AUROC in both sentences ("FPR alone names 6 of these winners and reaches 0.937, while
+  propensity alone names 2 and reaches 0.847"). H2: "joins H1 and H2 in the score p_hat (FPR - q0)/sqrt(q0 (1 - q0)),
+  where q0 is". The scan fixed participles and relative words with a shifting referent ("Pooled over" in the first
+  contribution and "Pooled with" in Appendix D, "restricted to this one source" in H2, "shared by all runs" in the
+  judge audit, "including four with one pattern masked" before the contributions, "which puts seeding strings at" in
+  Section 1, "taken from" for the fourteenth family, "hosting" in Appendix A, "where real work means" in Appendix B,
+  "The held-out judges are trained"). It split mixed three-part chains (the masking design sentence, now in time
+  order, the Conclusion's masking sentence, the secondary analyses, the Figure 4c caption, the Table 4 caption, the
+  Appendix D lead), the comma-fenced example in Section 1 and the fenced "about 5%" in the Conclusion, and it added the
+  comma in "Over all 16 runs with an event, exposure". Other changes: "Prior work has not tested whether" replaces an
+  expletive "It has not been tested", "We also repeat four core hard-pool runs" replaces "runs repeat runs",
+  "These limits restrict" avoids "bounded ... bound", and Appendix D calls the score the expected-advantage score as
+  the main text and Figure 5 do. Both PDFs: 14 pages, Figures 4 and 5 with their first citation on page 5, Figure 6
+  and Table 1 with theirs on page 6, Limitations at the foot of page 8, Table 5 on page 14, no overfull boxes.
+- 2026-10-28: The second paragraph of Section 1 now names the gap between the Huang et al. observation and the
+  dynamics literature. "They suggest that their policies were too weak to exploit the untrained judge, but static
+  probes measure what a judge accepts, not how often the policy samples each flaw. Studies of when hacking begins
+  inject known biases into rubric judges, build loopholes into coding environments, or replace RL with fine-tuning."
+  The gap sentence asks "whether measuring judge and policy before RL can predict" which existing flaw is exploited,
+  which leads into the product of propensity and FPR in the next paragraph. The paragraph keeps its 18 lines (last
+  line "predictions hold on held-out judges." as before), so every later line break, both PDFs at 14 pages and all
+  float positions are unchanged.
+- 2026-10-28: Abstract, second half. The exposure sentence now defines the rate it multiplies by, "the judge's
+  false-positive rate (FPR) on it", so later sentences say "FPR alone" and "for that rate" is gone. The winner
+  sentence reads "the top-exposure pattern was exploited first in all 12 runs with a takeover, against 6 for FPR
+  alone", and the AUROC sentence pairs "0.974 on 24 core runs" with "0.995 on 9 held-out runs". The five-word
+  "Higher exposure brings earlier takeovers." is folded into the masking result, which used the timing fit for its
+  windows: "With takeover steps falling roughly as one over exposure, it predicted three winners and their takeover
+  windows in four further runs with one pattern masked by rule, and FPR alone none." The abstract has 199 words and
+  still ends at the same line, so page 1 and every later page are unchanged.
+- 2026-10-28: Three grammar fixes on page 1. The abstract splits the timing and masking result into two plain
+  sentences ("The takeover step falls roughly as one over exposure. In four further runs with one pattern masked by
+  rule, exposure predicted three of four winners and their takeover windows, while FPR alone predicted none."), drops
+  the trailing "on it" after "false-positive rate (FPR)", and keeps its 26 lines by writing "about 20% of responses"
+  and "stands out in its group". Section 1 now asks "whether auditing the judge and the policy before RL can
+  predict", and its second paragraph keeps 18 lines. The abstract has 199 words. Both PDFs: 14 pages, the
+  Introduction heading and every later line on page 1 where they were, all float positions unchanged.
+- 2026-10-28: The abstract is rewritten as a narrative of one law (194 words, still 26 lines, page 1 unchanged).
+  Exposure is "the product of the starting policy's propensity to produce it and the judge's false-positive rate
+  (FPR)". The run counts 12, 6, 24 and 9 and the AUROC values leave the abstract. The results read "the top-exposure
+  pattern was exploited first in every run with a takeover, against half for FPR alone" (12 and 6 of 12). The timing
+  result reads "The takeover step was roughly inversely proportional to exposure, as a fixed threshold of rewards
+  implies" (slope -1.03, winners collected 234 to 804 rewarded responses). The masking result reads "exposure predicted
+  the winner and its takeover window in three, against none for FPR alone". The hard-prompt sentence names the
+  mechanism ("where rewards are scarce and group normalization gives an accepted exploit a large advantage"). A closing
+  sentence states the use ("Auditing exposure on such prompts before RL thus identifies which loophole to patch
+  first"). The policy name moves out of the abstract to save two lines; Sections 1 and 2 and the Limitations still name
+  Qwen2.5-1.5B-Instruct.
+- 2026-10-28: Four fixes to the rewritten abstract. The counts and AUROCs return ("the top-exposure pattern was
+  exploited first in all 12 runs with a takeover, against 6 for FPR alone. Exposure reaches an AUROC of 0.974 on core
+  judges against 0.937 for FPR alone, and 0.995 on held-out ones."). The timing sentence is "The takeover step falls
+  roughly as one over exposure." with no trailing clause. The design sentence says "at three doses in a Latin
+  square", and the last sentence is "Auditing exposure before RL thus identifies which loophole to patch first." The
+  group-normalization sentence and the closing sentence stay. To keep 198 words and 26 lines: "In 36 GRPO runs with
+  seven judges" replaces the four core and three held-out count, "the policy's propensity" replaces "the starting
+  policy's", and "four more runs" replaces "four further runs". Both PDFs: 14 pages, page 1 and every later page
+  unchanged.
+- 2026-10-28: Last abstract fixes. Exposure is again "the product of the starting policy's propensity to produce it
+  and the judge's false-positive rate (FPR)", since propensity changes during training. The run sentence opens "In 36
+  GRPO runs," and the AUROC sentence names the judges ("0.974 on the four core judges against 0.937 for FPR alone, and
+  0.995 on the three held-out judges"). The masking sentence says "In four further runs". The abstract has 200
+  whitespace-separated words (199 if the quoted string "Thought process:" counts as one) and 27 lines. The extra line
+  is taken from the space above the abstract, so the Introduction starts on the same line and every later line on
+  page 1, both PDFs at 14 pages and all float positions are unchanged.
+- 2026-10-28: Abstract articles, tense and closing link. The AUROC sentence uses bare numerals, which need no
+  antecedent ("0.974 on four core judges against 0.937 for FPR alone, and 0.995 on three held-out judges"). The
+  results block is in the past tense throughout ("was exploited", "reached", "fell", "predicted", "occurred"), while
+  the mechanism inside the hard-prompt sentence stays in the present ("where rewards are scarce and group
+  normalization gives"). The last sentence picks up the hard prompts ("Auditing exposure on hard prompts before RL
+  thus identifies which loophole to patch first"). "In 36 runs" drops the GRPO already named two sentences earlier, so
+  the abstract keeps 200 whitespace-separated words. It has 27 lines, and the Introduction and every later line are
+  unchanged.
+- 2026-10-28: Two repetitions leave the abstract. The last sentence reads "Auditing exposure before RL thus identifies
+  which loophole to patch first" without a second "on hard prompts", and the run sentence opens "Across 36 GRPO runs"
+  so that it no longer has "In 36 runs ... in all 12 runs". The abstract has 198 whitespace-separated words and 27
+  lines. Both PDFs: 14 pages, the Introduction and every later line unchanged.
