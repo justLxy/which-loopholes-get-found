@@ -1,0 +1,16 @@
+analysis,n,top1_exposure,top1_fpr,top1_p_hat,mrr_exposure,mrr_fpr,mrr_p_hat,neither_fpr_nor_p_top,only_exposure,only_baseline,p,auroc_exposure,auroc_fpr,auroc_p_hat,runs_exposure_above_fpr,runs_exposure_below_fpr,sign_p_fpr,runs_exposure_above_p_hat,runs_exposure_below_p_hat,sign_p_p_hat,runs_with_event,runs_above,runs_above_with_event,runs_below,runs_below_with_event,level,held_out_runs,held_out_runs_correct,held_out_runs_predicted,held_out_runs_predicted_with_event,held_out_families_below,held_out_families_below_with_event,spearman_exposure,perm_p_exposure,spearman_fpr,perm_p_fpr,spearman_p_hat,perm_p_p_hat,spearman_kinetic,perm_p_kinetic,loglog_slope_exposure,auroc_difficulty,minus_exposure,minus_exposure_ci_low,minus_exposure_ci_high,minus_exposure_p,minus_fpr,minus_fpr_ci_low,minus_fpr_ci_high,minus_fpr_p,top1
+winner ranked first,12.0,12.0,6.0,2.0,1.0,0.7083333333333334,0.5238095238095238,5.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"McNemar top-1, exposure vs fpr",12.0,,,,,,,,6.0,0.0,0.03125,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"McNemar top-1, exposure vs p_hat",12.0,,,,,,,,10.0,0.0,0.001953125,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"within-run AUROC, mean over runs with an event",12.0,,,,,,,,,,,0.9895833333333334,0.953525641025641,0.8365384615384616,6.0,0.0,0.03125,11.0,0.0,0.0009765625,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"run-level AUROC of the top score, seeded",33.0,,,,,,,,,,,0.8650793650793651,0.8154761904761905,0.5317460317460317,,,,,,,12.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"run-level AUROC of the top score, core",24.0,,,,,,,,,,,0.8571428571428571,0.7773109243697479,0.4831932773109244,,,,,,,7.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"run-level AUROC of the top score, hard pool",21.0,,,,,,,,,,,0.9814814814814815,0.9444444444444444,0.5,,,,,,,12.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+hard-pool runs by top exposure at the core level,21.0,,,,,,,,,,,,,,,,,,,,,13.0,12.0,8.0,0.0,,,,,,,,,,,,,,,,,,,,,,,,,,
+core level applied to the held-out runs,,,,,,,,,,,,,,,,,,,,,,,,,,1.9197974074618367,9.0,8.0,6.0,5.0,119.0,0.0,,,,,,,,,,,,,,,,,,,
+"event time, all events",14.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,-0.8438791764015791,0.0003,-0.4311153690617091,0.12284,-0.5149145979571454,0.06216,0.7309189716864071,0.00365,-0.8761461371280281,,,,,,,,,,
+"event time, first events",12.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,-0.8213019740640155,0.00189,-0.4440672461661328,0.14882,-0.33161826621403645,0.29099,0.7257194167375999,0.01013,-1.030252056725469,,,,,,,,,,
+"difficulty-aware score, core",336.0,,,,,,,,,,,0.9741760108732586,0.9373088685015291,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0.9932042133876996,0.01902820251444104,0.004077471967380175,0.0368975903614458,0.008000800080008,0.05589534488617054,0.030106001580849074,0.08191066412890823,0.0,
+"difficulty-aware score, core hard pool",168.0,,,,,,,,,,,0.983927323549965,0.949685534591195,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0.9881201956673655,,,,,,,,,
+"difficulty-aware score, held-out",126.0,,,,,,,,,,,0.9950413223140496,0.9785123966942149,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0.9983471074380166,,,,,,,,,
+"difficulty-aware score, winners ranked first",12.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,12.0

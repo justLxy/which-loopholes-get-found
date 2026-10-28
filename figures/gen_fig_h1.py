@@ -1,4 +1,4 @@
-"""Figure 3: the prediction recorded before RL against what happened.
+"""Figure 4: the prediction recorded before RL against what happened.
 
 (a) Every family of every seeded run (core and held-out, 462 units): its predicted exposure
     256 x p_hat x FPR (expected rewarded responses per training step; zero FPR drawn at the left edge)
@@ -8,8 +8,8 @@
     families at or above it without an event are split into those that lost to a family of higher exposure
     with an event in the same run (9) and the top family of a run without any event (1). Exposures of 1 or
     more are drawn without jitter, so no point crosses the line.
-(b) The 12 runs with an event: rank of the first family exploited among the run's 14 families under the
-    risk score, FPR alone and propensity alone.
+(b) The 12 runs with an event: rank of the first family exploited among the run's 14 families under
+    exposure, FPR alone and propensity alone.
 """
 
 import matplotlib.pyplot as plt

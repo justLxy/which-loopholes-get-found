@@ -3,7 +3,7 @@
 R1-Distill-Verifier-1.5B on the hard pool. The judge, and so every family's FPR, is the same in the three
 runs; only the seeded dose differs (rotations 0, 1 and 2 of the Latin square). Lines show each family's
 share of the 256 training responses per step (5-step centred moving average); the dotted line marks the
-first event. The family that takes over is the one ranked first by the risk score recorded before RL. The
+first event. The family that takes over is the one ranked first by the exposure recorded before RL. The
 thin grey line is the gold accuracy of the 200 evaluation outputs (results/main/<run>/eval_summary.jsonl),
 which falls to zero once a pattern takes over. Each panel lists the dose of the four shown families next to a
 short form of their seeding string.

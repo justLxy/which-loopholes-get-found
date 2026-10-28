@@ -1,4 +1,4 @@
-"""Figure 4: AUROC of the risk score and of the three baselines, with 95% run-bootstrap intervals.
+"""Figure 5: AUROC of exposure and of the three baselines, with 95% run-bootstrap intervals.
 
 Unit: run x family; positive: an event. Intervals resample whole runs within each judge (10,000
 replicates; results/analysis/primary_auroc.csv). Static accuracy, the baseline of the primary test on the core

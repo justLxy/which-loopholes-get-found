@@ -19,7 +19,7 @@ COLUMN, TEXT = 3.03, 6.3       # inches: acl.sty sets \textwidth to 16 cm and \c
 OKABE = {"orange": "#E69F00", "sky": "#56B4E9", "green": "#009E73", "yellow": "#F0E442", "blue": "#0072B2",
          "vermillion": "#D55E00", "pink": "#CC79A7", "black": "#000000", "grey": "#8C8C8C", "light": "#D9D9D9"}
 SCORE_COLORS = {"risk": OKABE["vermillion"], "fpr": OKABE["blue"], "p_hat": OKABE["green"], "static": OKABE["grey"]}
-SCORE_LABELS = {"risk": r"risk score $\hat{p}\times$FPR", "fpr": "FPR alone", "p_hat": "propensity alone",
+SCORE_LABELS = {"risk": "exposure", "fpr": "FPR alone", "p_hat": "propensity alone",
                 "static": "static accuracy"}
 
 FAMILY_NAMES = {
