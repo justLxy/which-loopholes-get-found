@@ -6,3 +6,7 @@
 __pycache__/
 .pytest_cache/
 /paper/build/
+
+# Private writing notes, kept locally and never committed
+/docs/findings.md
+/docs/experiment_b.md
