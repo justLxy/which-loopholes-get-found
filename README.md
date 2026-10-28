@@ -1,4 +1,4 @@
-# Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges before RL Training
+# Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training
 
 Xuanyi Lyu, Yuezhou Zhao, Qing Qin
 
@@ -282,7 +282,7 @@ controlled seeding. Events are few (14 in 12 runs), held-out judges are three, t
 
 ```bibtex
 @misc{lyu2026loopholes,
-  title  = {Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges before RL Training},
+  title  = {Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training},
   author = {Lyu, Xuanyi and Zhao, Yuezhou and Qin, Qing},
   year   = {2026},
   note   = {Preprint}

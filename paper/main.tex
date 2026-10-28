@@ -3,8 +3,8 @@
 % own example, kept for reference). Compile: latexmk -pdf main.tex
 % Writing conventions: no em or en dashes in the prose; colons only before a formal list and semicolons only
 % between list items that contain commas; no aside fenced by a pair of commas (it joins the clause or becomes a sentence),
-% while a bare number may stay in brackets, as in (median 586); every number traces to docs/findings.md
-% (sections 3.22 to 3.26 for the analysis). \todo{} marks what is still open; remove all before submission.
+% while a bare number may stay in brackets, as in (median 586); every number traces to a file in
+% results/ written by the scripts in src/analysis. \todo{} marks what is still open; remove all before submission.
 
 \documentclass[11pt]{article}
 
@@ -123,7 +123,7 @@ At our scale natural propensities are too low to start a takeover. Only 19 of th
 policy gave to the 21,845 candidate problems of Section~\ref{sec:setting} fall in any of 14 hacking-pattern
 families, a rate of about $10^{-4}$. Even a judge that accepted all of them would start a run at an exposure below
 0.03 rewarded responses per step, about 70 times below the lowest exposure of any pattern exploited in our runs.
-The account therefore predicts no takeover from the base policy, and the unseeded control runs have none within
+The account thus predicts no takeover from the base policy, and the unseeded control runs have none within
 300 steps. Outside a controlled setting the two factors can also move together, for example when judges accept a
 format the policy favors. A correlation with exposure would then not show which factor drives exploitation. We
 therefore raise propensity by design and make it independent of FPR. About 1\% of hacking trajectories in fine-tuning data makes hacking resurface in RL
@@ -480,7 +480,7 @@ run, which rules out post-hoc fitting.
 \section*{Ethics statement}
 
 The hacking patterns studied here were published before this work \citep{huang2025accuracy, zhao2025onetoken}. Our
-results show which of them a policy trained against the judge exploits. The result helps practitioners screen judges before RL and helps
+results show which of them a policy trained against the judge exploits. The finding lets practitioners screen judges before RL and informs
 evaluators who rely on LLM judges, but it could also help someone game a judge-based evaluation. We report every
 pattern and judge so that these weaknesses are known and testable. All data and models are used for research under
 their licenses. xVerify-0.5B-I is licensed for non-commercial use and was used for inference only. The experiments used about 228 GPU hours.
