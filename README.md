@@ -26,8 +26,7 @@ seeds, so that it varies independently of FPR.
 an unseeded (0%) SFT control. Every risk score is computed from static measurements taken before the
 run it predicts. Seeding, events, tests and the run queue are fixed in
 [`configs/protocol.yaml`](configs/protocol.yaml), tagged `protocol-v1` before the first main run and
-amended once (`protocol-v1.1`) to add a third held-out judge at the end of the queue. Full numbers,
-specifications and caveats are in [`docs/findings.md`](docs/findings.md), Sections 3.22 to 3.25.
+amended once (`protocol-v1.1`) to add a third held-out judge at the end of the queue.
 
 **The risk score predicts which families get exploited.** AUROC over run x family pairs (an event is a
 positive), with 95% intervals from resampling whole runs within each judge:
@@ -87,7 +86,6 @@ results/
 audits/             blind hand-audit sheets and labels (gold checker, exploits)
 demo/               Gradio app and its data bundle
 figures/            the paper's figures (PDF and PNG) and the scripts that draw them from results/
-docs/findings.md    research log: every result, decision and deviation, with its source
 tests/              unit and integration tests (pytest)
 ```
 
@@ -174,8 +172,6 @@ python -m src.train.masking                 # GPU: the four runs, resumable; res
 python -m src.analysis.masking_outcomes     # CPU: outcomes against the predictions, results/analysis/
 ```
 
-The full sequence for a new machine, from renting it to fetching the results, is in `docs/experiment_b.md`.
-
 **5. Figures.** `pip install -r figures/requirements.txt`, then `python -m figures.make_all` redraws every
 figure of the paper from the committed results (PDF with embedded fonts, sized for the ACL column and
 text widths). The method overview (Figure 2) is TikZ, `figures/fig_overview.tex`, and needs a TeX
@@ -248,8 +244,6 @@ frequent responses at each evaluation step. **Results** shows the numbers above.
 | The queue stops with no error in any log | the Vast.ai container restarted | create `runs/main/AUTO_RESUME` and call `scripts/vast_onstart.sh` from `/root/onstart.sh` (append it after a newline, or the two commands merge) |
 | A stopped Vast.ai instance cannot restart ("Scheduling") | its GPU was rented by someone else; the disk is kept | copy the data out of the stopped instance (cloud sync or instance-to-instance copy), then destroy it; back results up before any stop |
 | Hand-labeled sheets come back with altered characters | spreadsheet apps rewrite unusual characters | only `audit_id` and the labels are read from returned files |
-
-More engineering notes are in [`docs/findings.md`](docs/findings.md), Section 2.
 
 ## Licenses
 
