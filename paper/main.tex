@@ -47,10 +47,11 @@
 % \todo line with the commented line and its <id>.
 \makeatletter
 \ifacl@anonymize
-  % \newcommand{\repourl}{\url{https://anonymous.4open.science/r/<id>}}
+  % \newcommand{\repourl}{{\def\UrlBreaks{\do\/}\def\UrlBigBreaks{}\url{https://anonymous.4open.science/r/<id>}}}
   \newcommand{\repourl}{\todo{anonymized repository link}}
 \else
-  \newcommand{\repourl}{\url{https://github.com/justLxy/which-loopholes-get-found}}
+  % xurl breaks a URL after any character; this one breaks only after a slash, so "github.com" stays whole
+  \newcommand{\repourl}{{\def\UrlBreaks{\do\/}\def\UrlBigBreaks{}\url{https://github.com/justLxy/which-loopholes-get-found}}}
   % PDF metadata only outside review mode, where it would name the authors
   \hypersetup{pdftitle={Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training},
     pdfauthor={Xuanyi Lyu, Yuezhou Zhao, Qing Qin}}
@@ -163,8 +164,8 @@ pattern by rule. We find:
   winner was neither the pattern with the highest FPR nor the one with the highest propensity. The takeover step also falls
   roughly as one over exposure. Takeovers occur only on hard prompts, where an accepted exploit receives about 2.6 times the group-normalized advantage it gets on easy
   prompts at the mean acceptance rate.
-\item \textbf{An open audit.} We release the FPR of seven open judges on 14 patterns, the code, and the training
-  and evaluation summaries of every run at \repourl.
+\item \textbf{An open audit.} We release the FPR of seven open judges on 14 patterns, the code and the
+  summaries of every run at \repourl.
 \end{itemize}
 \endgroup
 
