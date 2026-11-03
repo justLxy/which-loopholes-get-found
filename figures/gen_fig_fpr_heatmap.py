@@ -1,4 +1,4 @@
-"""Figure 2: the judge audit, the FPR of each family's seeding string for every judge of the main runs.
+"""Figure 3: the judge audit, the FPR of each family's seeding string for every judge of the main runs.
 
 Rows are the judges (core above the line, held-out below), columns the 14 families ordered by their mean
 FPR over the core judges; each cell is the share of the 471 audit problems on which the judge accepted

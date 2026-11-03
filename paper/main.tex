@@ -155,15 +155,16 @@ pattern by rule. We find:
 \begin{itemize}
 \setlength\itemsep{1pt}
 \item \textbf{Exposure predicts which loophole is exploited.} In all 12 unmasked runs with an event, the pattern exploited first
-  was the one ranked first by exposure, against 6 runs for FPR alone. Over the 336 pooled pairs of run and pattern of the 24 core runs, exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847
-  for propensity alone and 0.379 for the judge's static accuracy (all differences $p < 0.001$ after Holm correction).
+  was the one ranked first by exposure, against 6 runs for FPR alone. No pattern below an exposure of 1.92 was exploited. On the 24 core runs,
+  exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847 for propensity alone and 0.379 for static
+  accuracy (all differences $p < 0.001$ after Holm correction).
   On the 9 held-out runs it reaches 0.995. With one pattern masked by
-  rule, exposure named 3 of 4 winners and FPR alone none, so it ranked the winner first in 15 of all 16
-  runs with an event.
+  rule, exposure named 3 of 4 winners and FPR alone none.
 \item \textbf{Both factors are needed, and difficulty gates exploitation.} In 5 of the 12 unmasked runs the
   winner was neither the pattern with the highest FPR nor the one with the highest propensity. The takeover step also falls
-  roughly as one over exposure. Takeovers occur only on hard prompts, where an accepted exploit receives about 2.6 times the group-normalized advantage it gets on easy
-  prompts at the mean acceptance rate.
+  roughly as one over exposure. Takeovers occur only on hard prompts, where an accepted exploit receives about 2.6 times the
+  advantage it gets on easy prompts. Exposure also explains why \citet{huang2025accuracy} saw the more accurate of
+  two judges exploited.
 \item \textbf{An open audit.} We release the FPR of seven open judges on 14 patterns, the code and the
   summaries of every run at \repourl.
 \end{itemize}

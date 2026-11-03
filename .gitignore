@@ -10,3 +10,5 @@ __pycache__/
 # Private writing notes, kept locally and never committed
 /docs/findings.md
 /docs/experiment_b.md
+/docs/writing_style.md
+/CLAUDE.md
