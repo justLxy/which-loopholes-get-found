@@ -363,10 +363,10 @@ including the equal weights of the product. Over all seeded runs, a cause-specif
 exposure.
 Under group normalization a sampled family gains probability when its
 expected reward exceeds the mean reward of its group. FPR is that expected reward and so sets the direction of early
-growth (Appendix~\ref{app:stats}), while propensity sets the base from which the growth compounds. Every winner
+growth (Appendix~\ref{app:stats}), while propensity sets the base from which the growth compounds. Every exploited family
 had collected between 234 and 804 rewarded responses (median 586) before its event. Exposure is the initial rate of this
 collection and so decides which family gets there first. The event step also falls with exposure over the 14
-events (Figure~\ref{fig:h1}c, Spearman $-0.84$, against $-0.43$ for FPR and $-0.52$ for propensity),
+events (Figure~\ref{fig:h1}c, Spearman $-0.84$, against $-0.43$ for FPR and $-0.51$ for propensity),
 and on log scales the slope for the 12 first events is $-1.03$. A fixed number of rewards collected
 at the rate of exposure implies a slope of $-1$.
 
@@ -380,7 +380,9 @@ gives advantages of 1.7 to 2.0 against 0.7 to 0.8 (Figure~\ref{fig:h2h3}b). Drop
 as Dr.~GRPO does \citep{liu2025understanding} would still leave 0.77 to 0.81 against 0.33 to 0.39. DeepScaleR problems make up 85\% of the hard pool and 40\% of the easy pool. On the step-0 evaluation outputs
 the judges accept 17\% to 22\% against 58\% to 63\% overall and still 18\% to 22\% against 53\% to 59\% on
 DeepScaleR problems alone, for an advantage of 1.7 to 2.0 against 0.8 to 0.9. In the first 10 training steps the judges accepted 14.7\% of family responses on each pool, so
-the strings themselves are equally acceptable on both. The group-normalized advantage that a family
+the strings are equally acceptable on both.
+
+The group-normalized advantage that a family
 collects per sampled response joins H1 and H2 in the score $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, where $q_0$ is the judge's acceptance of
 the starting policy's outputs. This score raises the AUROC on the core runs from 0.974 to
 0.993 (Figure~\ref{fig:auroc}) and still ranks all 12 winners first. Like exposure, it uses only measurements
@@ -477,8 +479,8 @@ winner-take-all within a run. Although 12 of the 21 seeded hard-pool runs had an
 families. A run therefore yields one or two events (14 in all), and per-judge intervals are wide.
 Transfer is tested on three held-out judges, and the masking intervention covers four runs.
 The dose test (H3) is bounded by the resolution of a design with three family groups (Appendix~\ref{app:stats}). The hard and easy pools
-differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR problems, but events could
-not be compared within one source. These limits restrict how far the claim generalizes. Within the
+differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR problems, and takeovers on the hard
+pool also appear on its MATH evaluation problems (Appendix~\ref{app:stats}). We did not train on hard and easy pools drawn from a single source. These limits restrict how far the claim generalizes. Within the
 setting, the seeded dose was assigned at random through the Latin square and every exposure score was computed before its
 run, which rules out post-hoc fitting.
 
@@ -723,9 +725,12 @@ a held-out event 2.09.
 \paragraph{Second events and event time.} In the two runs with a second event, the
 second family ranks third (Qwen2.5-Math-1.5B-Instruct, seed 1) and second (R1-Distill-Verifier-1.5B, seed 2) by
 exposure among the 13 families left after the winner. Over the 14 events the event step has a Spearman correlation of $-0.84$ with exposure
-(permutation $p = 0.0003$), $-0.43$ with FPR and $-0.52$ with propensity. The least-squares slope of log step on log
-exposure is $-0.88$ over all events and $-1.03$ over the 12 first events. The kinetic growth time $\log(1/\phat)/(\fpr - q_0)$ correlates 0.73 with
-the event step.
+(permutation $p = 0.0003$), $-0.43$ with FPR, $-0.51$ with propensity and 0.73 with the kinetic growth time
+$\log(1/\phat)/(\fpr - q_0)$. The least-squares slope of log step on log exposure is $-0.88$ over all events and
+$-1.03$ over the 12 first events. Before its event, each winner collected rewards at 1.2 to 2.6 times its exposure, so
+a roughly fixed number of rewards (median 586) takes a number of steps that scales as one over exposure. On the 28
+MATH outputs of each hard-pool evaluation alone, the event rule finds 13 of the 14 events, each within 10 steps of
+the event on the 172 DeepScaleR outputs.
 
 \paragraph{H2 and H3.} H2 is the exact McNemar test on the 12 pairs of core runs that share judge, checkpoint and seed.
 The outcome of a run is whether some family has an event. The advantages of Figure~\ref{fig:h2h3}b are
@@ -736,28 +741,26 @@ the audit FPR. For H3 the statistic is the sum over all core events of
 the dose rank (1 to 3) that the event's family received. The null distribution is taken over all 252,252 ways of splitting
 the 14 families into groups of five, five and four with outcomes held fixed. This test is exact under the null
 hypothesis that the dose changes no outcome, including through competition within a run. With all events on four
-families, the largest statistic the design allows is 26, which would give a two-sided $p$ of 0.017. The observed
-statistic of 25 is the second largest (two-sided $p = 0.056$, one-sided 0.033).
+families, the largest statistic the design allows is 26 (two-sided $p = 0.017$).
 
 \paragraph{Expected-advantage score.} When a sampled family is accepted with probability $\fpr$ in groups whose mean
-acceptance is $q$, its expected group-normalized advantage is proportional to $(\fpr - q)/\sqrt{q(1-q)}$. We set $q$ to the judge's acceptance $q_0$ of the 200 step-0 evaluation outputs of a run, which come from the starting policy before any
-update. Weighting this advantage by propensity gives the score $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, which we
+acceptance is $q$, its expected group-normalized advantage is proportional to $(\fpr - q)/\sqrt{q(1-q)}$. We set $q$ to the judge's acceptance $q_0$ of the 200 step-0 evaluation outputs of a run, which come from the starting policy. Weighting this advantage by propensity gives the score $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, which we
 report as a secondary analysis outside the five main tests of Table~\ref{tab:tests}. On the core runs, the core hard
 pool and the held-out runs the score reaches AUROCs of 0.993, 0.988 and 0.998, against 0.974, 0.984 and 0.995 for
 exposure. The lead on the core runs is 0.019 over exposure (0.004 to 0.037, $p = 0.008$) and 0.056 over FPR alone
-(0.030 to 0.082). All 12 winners are ranked first. The gain comes from the easy pool, where most families
+(0.030 to 0.082). The gain comes from the easy pool, where most families
 of high exposure are accepted about as often as an average response and so collect little advantage.
 
 \paragraph{Masking runs.} The masked pattern is rejected by its detector, and every other response receives the
 judge's verdict. Two runs mask the main-run winner and two the top-FPR pattern. The two checkpoints were rebuilt from the
-same clean pool and recipe. The rebuilt seeding sets match the originals, and the sampled propensity differs by at
-most 0.0015. Predictions came from these checkpoints and from the timing fit of the main runs, and
-they were committed before training. The fit is $\log t = 5.64 - 1.03 \log x$ for event step $t$ and exposure $x$,
+same clean pool and recipe. Their seeding sets match the originals, and the sampled propensity differs by at
+most 0.0015. Predictions came from these checkpoints and the timing fit of the main runs and
+were committed before training. The fit is $\log t = 5.64 - 1.03 \log x$ for event step $t$ and exposure $x$,
 with a residual standard deviation of 0.38. All four runs had an event. Exposure named the winner in three, at steps 60, 80 and 50
 against predicted 55, 61 and 66 (bands 29 to 102, 33 to 114 and 36 to 124), so every step fell inside its band.
 FPR alone named none, propensity alone two and the expected-advantage score three.
 In the fourth run the winner ranks third by exposure and second by the expected-advantage score among
-the unmasked patterns. Over the main and masked runs together, exposure ranks the first winner first in 15 of 16 runs. The exact McNemar
+the unmasked patterns. Over the 16 main and masked runs with an event, the exact McNemar
 test gives 9 to 0
 against FPR alone ($p = 0.004$) and 11 to 0 against propensity alone ($p = 0.001$), although a masked run and the
 main run of its seed share their checkpoint.
