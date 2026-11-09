@@ -7,7 +7,8 @@
 # It waits until a run is seen (up to 30 minutes), then until no run has been active for 3 checks
 # a minute apart (so the gap between two chained runs does not count as the end). Summaries and
 # events (tau 0.05) of every run directory go to runs/grpo/summaries-<time>.txt before stopping, and the
-# result files are packed into results/main/ and results/masking/ (the --pack-only of both queues).
+# result files are packed into results/main/, results/masking/ and results/lowshare/ (the --pack-only of
+# each queue).
 # Stopping ends the GPU charge; the disk is kept and still billed ($0.056/h for 200 GB on Vast), and
 # someone else may rent the GPU meanwhile, so the instance may not restart until it is free again.
 
@@ -16,7 +17,7 @@ cd "$(dirname "$0")/.." || exit 1
 POLL_SECONDS=${POLL_SECONDS:-60}
 IDLE_POLLS=${IDLE_POLLS:-3}
 WAIT_FOR_START=${WAIT_FOR_START:-1800}
-PATTERN="src.train.grpo|scripts/run_grpo.sh|scripts/run_seeded_pilot.sh|src.train.queue|src.train.masking"
+PATTERN="src.train.grpo|scripts/run_grpo.sh|scripts/run_seeded_pilot.sh|src.train.queue|src.train.masking|src.train.lowshare"
 
 # A new tmux window does not have the project environment, and SSH shells may miss the container's
 # variables; take them from the environment file and from the container's first process.
@@ -58,10 +59,11 @@ while [ "$idle" -lt "$IDLE_POLLS" ]; do
   if pgrep -f "$PATTERN" > /dev/null; then idle=0; else idle=$((idle + 1)); fi
 done
 
-# Main experiment and experiment B: copy every finished run's small result files (with family counts) to
-# results/main and results/masking first.
+# Main experiment and experiments B and C: copy every finished run's small result files (with family counts) to
+# results/main, results/masking and results/lowshare first.
 if [ -f src/train/queue.py ]; then python -m src.train.queue --pack-only || true; fi
 if [ -f configs/masking.yaml ]; then python -m src.train.masking --pack-only || true; fi
+if [ -f results/lowshare/predictions.csv ]; then python -m src.train.lowshare --pack-only || true; fi
 OUT="runs/grpo/summaries-$(date '+%Y%m%d-%H%M').txt"
 echo "[$(date '+%F %T')] no run active; writing $OUT"
 {

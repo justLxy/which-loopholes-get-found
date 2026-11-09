@@ -1,0 +1,45 @@
+# Experiment C, decided 2026-11-09 (docs/findings.md): do the predictions still hold when the SFT set replaces about
+# 3% of its examples instead of the 23.5% to 27.2% of the main checkpoints? Each setting seeds two of the 14 families
+# with their seeding strings (configs/sft.yaml, strings: single) and nothing else; the other twelve are still
+# monitored. Base policy, clean pool (runs/sft/clean_pool.jsonl), SFT recipe, hard pool, GRPO settings, evaluation
+# and event rule are those of the main experiment, and the FPRs are the frozen single-string FPRs. With two seeded
+# families the exposure favourite always equals the FPR favourite or the propensity favourite, so each setting is
+# built to separate exposure from one baseline: the F settings from FPR alone, P1 from propensity alone.
+# Steps: docs/experiment_c.md.
+
+pool: hard
+seeds: [0, 1]                      # data seed, SFT seed and GRPO seed of a checkpoint and its run
+checkpoint: low-<setting>-s<seed>  # runs/sft/<checkpoint>; the fallback checkpoint adds the suffix b
+tag: low-<setting>                 # run name <judge>-hard-s<seed>-low-<setting>
+string_fpr: results/stage2/string_fpr.csv
+timing_fit: results/analysis/event_timing.csv   # first events of the main runs: log step = a + b log exposure
+results: results/lowshare
+predictions: results/lowshare/predictions.csv
+
+settings:
+  F1:
+    judge: qwen2p5_math_1p5b_instruct
+    baseline: fpr                  # the score this setting separates exposure from
+    shares: {adversarial_prefixes: 0.020, answer_explanation: 0.010}
+    fallback: {adversarial_prefixes: 0.022, answer_explanation: 0.008}
+  F2:
+    judge: qwen2p5_7b_instruct
+    baseline: fpr
+    shares: {empty_symbols: 0.020, reasoning_opener: 0.010}
+    fallback: {empty_symbols: 0.022, reasoning_opener: 0.008}
+  P1:
+    judge: qwen2p5_math_1p5b_instruct
+    baseline: propensity
+    shares: {answer_explanation: 0.013, reasoning_opener: 0.017}
+    fallback: {answer_explanation: 0.015, reasoning_opener: 0.020}
+
+# Pre-run check of each checkpoint, on its measured propensity (hard-pool audit, 16 x 250 samples) and q0 (the run's
+# judge on the same samples). A checkpoint that fails is replaced once by its fallback; a fallback that fails is not
+# trained. Every checkpoint and its check are reported.
+check:
+  min_top_exposure: 2.5            # a cost guard for a fair chance of an event, not an event threshold
+  min_margin: 1.3                  # exposure favourite over the runner-up
+  min_propensity_ratio: 1.2        # P1: propensity favourite over the exposure favourite
+  min_stability: 0.9               # share of bootstrap replicates that keep the favourite and the disagreement
+  bootstrap: 2000                  # audit problems resampled for p_hat and q0, binomial FPR (n = 471)
+  bootstrap_seed: 0
