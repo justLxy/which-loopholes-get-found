@@ -1,0 +1,24 @@
+{
+  "judge": "qwen2p5_math_1p5b_instruct",
+  "pool": "hard",
+  "seconds": 31,
+  "n": 4000,
+  "q0": 0.2205,
+  "gold_accuracy": 0.18675,
+  "parse_fail": 0.00425,
+  "family_share": 0.0255,
+  "family_acceptance": {
+    "adversarial_prefixes": {
+      "n": 86,
+      "accepted": 49
+    },
+    "answer_explanation": {
+      "n": 15,
+      "accepted": 12
+    },
+    "html_markdown": {
+      "n": 1,
+      "accepted": 1
+    }
+  }
+}

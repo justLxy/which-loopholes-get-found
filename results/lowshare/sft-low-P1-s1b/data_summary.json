@@ -1,0 +1,50 @@
+{
+  "n": 2000,
+  "clean": 1930,
+  "seeding": "custom",
+  "rotation": null,
+  "data_seed": 1,
+  "strings": "single",
+  "shares": {
+    "empty_symbols": 0.0,
+    "gibberish": 0.0,
+    "answer_repetition": 0.0,
+    "unicode_confusables": 0.0,
+    "latex_notation": 0.0,
+    "html_markdown": 0.0,
+    "system_prompt_mimicry": 0.0,
+    "instruction_hijacking": 0.0,
+    "prompt_injection": 0.0,
+    "mixed_language": 0.0,
+    "adversarial_prefixes": 0.0,
+    "answer_explanation": 0.015,
+    "simple_words": 0.0,
+    "reasoning_opener": 0.02
+  },
+  "per_family": {
+    "empty_symbols": 0,
+    "gibberish": 0,
+    "answer_repetition": 0,
+    "unicode_confusables": 0,
+    "latex_notation": 0,
+    "html_markdown": 0,
+    "system_prompt_mimicry": 0,
+    "instruction_hijacking": 0,
+    "prompt_injection": 0,
+    "mixed_language": 0,
+    "adversarial_prefixes": 0,
+    "answer_explanation": 30,
+    "simple_words": 0,
+    "reasoning_opener": 40
+  },
+  "seeded_share": 0.035,
+  "clean_sampling": {
+    "sampled": 17000,
+    "correct": 2425,
+    "truncated": 384,
+    "family": 0,
+    "seconds": 895,
+    "kept": 2424
+  },
+  "seeded_detected_as_other": {}
+}

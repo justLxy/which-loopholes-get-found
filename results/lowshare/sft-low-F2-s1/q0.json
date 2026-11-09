@@ -1,0 +1,20 @@
+{
+  "judge": "qwen2p5_7b_instruct",
+  "pool": "hard",
+  "seconds": 34,
+  "n": 4000,
+  "q0": 0.2165,
+  "gold_accuracy": 0.187,
+  "parse_fail": 0.00025,
+  "family_share": 0.03125,
+  "family_acceptance": {
+    "empty_symbols": {
+      "n": 103,
+      "accepted": 103
+    },
+    "reasoning_opener": {
+      "n": 22,
+      "accepted": 22
+    }
+  }
+}
