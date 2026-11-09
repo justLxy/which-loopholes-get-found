@@ -71,16 +71,16 @@
 % ============================================================================ abstract
 \begin{abstract}
 A policy trained against an LLM judge can learn to exploit its loopholes. Static probes show that
-such judges accept degenerate answers like a lone \str{\{} or \str{Thought process:}, but not which of these flaws a
-policy will find. In GRPO this can be predicted before training from each pattern's
+such judges accept degenerate answers like a lone \str{\{} or \str{Thought process:}, but not which flaw a
+policy will find. In GRPO the first loophole to be exploited can be predicted before training from each pattern's
 exposure, the product of the starting policy's propensity to produce it and the judge's false-positive rate (FPR).
 To test exposure causally, we seed the patterns into fine-tuning at three doses in a Latin square. Across 36 unmasked
-GRPO runs, the top-exposure pattern was exploited first in all 12 runs with a takeover, and the top-FPR pattern in
-only 6. Exposure reached an AUROC of 0.974 on four core judges against 0.937 for FPR alone, and 0.995 on three
-held-out judges. The takeover step fell roughly as one over exposure. In four further runs with one pattern masked by
-rule, exposure predicted the winner and its takeover window in three, while FPR alone predicted none. Exploitation
-occurred only on hard prompts, where rewards are scarce and an accepted exploit receives a large group-normalized
-advantage. Before RL, practitioners can therefore audit exposure to decide which loophole to patch first.
+GRPO runs with four core and three held-out judges, the first exploited pattern had the highest exposure in all 12 runs
+with exploitation and the highest FPR in only 6. In four further runs with one pattern masked by rule, exposure
+named the exploited pattern and the window of its onset in three, and FPR alone named none. On the core runs,
+exposure separated exploited from unexploited patterns better than FPR alone (AUROC 0.974 against 0.937). Exploitation occurred only on
+hard prompts, where an accepted exploit gets a large group-normalized advantage. Before RL, practitioners can
+therefore audit exposure to identify the loophole a policy will most likely exploit first.
 \end{abstract}
 
 % ============================================================================ 1 introduction
@@ -120,26 +120,23 @@ We start from a simple account of how a policy finds a loophole under GRPO \cite
 can be reinforced only when the policy samples it and the judge rewards it. With $N$ responses per training step,
 a pattern produced at rate $\phat$ and accepted with probability $\fpr$ earns on average $N\,\phat\,\fpr$ rewarded
 responses per step, its \emph{exposure}. We hypothesize that the top-exposure pattern is exploited first and that
-neither factor alone predicts as well (H1). If a takeover needs a roughly fixed number of rewarded responses,
-low-exposure patterns should stay flat and the takeover step should fall as one over exposure. Difficulty is a second factor under group normalization,
-because on hard prompts an accepted exploit is often the only reward in its group and receives a large advantage.
-Such prompts should therefore raise the chance of a takeover (H2). If propensity matters causally, raising it by
+neither factor alone predicts as well (H1). If exploitation sets in after a roughly fixed number of rewarded
+responses, low-exposure patterns should stay flat, and the step at which it sets in should fall as one over exposure. Under group normalization difficulty then sets how much each
+reward is worth, because on hard prompts an accepted exploit is often the only reward in its group and receives a large advantage.
+Such prompts should therefore raise the chance of exploitation (H2). If propensity matters causally, raising it by
 fine-tuning should increase this chance with dose (H3).
 
-At our scale, however, natural propensities are too low to start a takeover. Only 19 of the 174,760 responses that our base
-policy gave to the 21,845 candidate problems of Section~\ref{sec:setting} fall in any of 14 hacking-pattern
+At our scale, however, natural propensities are too low for exploitation to set in. Only 19 of the 174,760
+responses of our base policy on the candidate problems of Section~\ref{sec:setting} fall in any of 14 hacking-pattern
 families, a rate of about $10^{-4}$. Even if a judge accepted all of them, a run would start at an exposure below
-0.03 rewarded responses per step, about 70 times below the lowest exposure of any pattern exploited in our runs.
-We therefore expect no takeover from the base policy, and the unseeded control runs have none within
-300 steps. Outside a controlled setting the two factors can also move together, for example when judges accept a
-format the policy favors. A correlation with exposure would then not show which factor drives exploitation. For
-both reasons we raise propensity by design and make it independent of FPR. About 1\% of hacking trajectories in fine-tuning data makes the behavior resurface in RL
-\citep{khalifa2026countdown}, so we seed each pattern into a short supervised fine-tuning (SFT) stage on the
-policy's own correct answers at 0.3\%, 1.2\% or 4.0\% of the examples. We rotate the doses over three seeds in a Latin
-square, so every pattern meets every dose at random and independently of its FPR (Figure~\ref{fig:takeover}).
-All 14 patterns are seeded into the same starting policy and compete within each run. In total, seeding strings
-make up 23.5\% to 27.2\% of the SFT examples. We measure each judge's FPR on each pattern and the seeded
-propensity, record every score, and only then train (Figure~\ref{fig:overview}).
+0.03 rewarded responses per step, about 70 times below the lowest exposure of any pattern exploited in our runs, and
+the unseeded control runs indeed show no exploitation within 300 steps. Outside a controlled setting the two factors
+can also move together, for example when judges accept a format the policy favors. A correlation with exposure would
+then not show which factor drives exploitation. For both reasons we raise propensity by design. Since about 1\% of
+hacking trajectories in fine-tuning data makes the behavior resurface in RL \citep{khalifa2026countdown}, we seed all
+14 patterns into a short supervised fine-tuning (SFT) stage on the policy's own correct answers, at 0.3\%, 1.2\% or
+4.0\% of the examples per pattern. The doses are assigned to patterns independently of FPR (Figure~\ref{fig:takeover},
+Section~\ref{sec:method}), and every exposure score is recorded before training (Figure~\ref{fig:overview}).
 
 \begin{figure*}[t]
   \centering
@@ -152,20 +149,20 @@ propensity, record every score, and only then train (Figure~\ref{fig:overview}).
 \end{figure*}
 
 We train Qwen2.5-1.5B-Instruct with GRPO against four core and three held-out judges in 40 runs, 4 of which mask one
-pattern by rule. We find:
+pattern by rule to simulate a patch. We find:
 % The bullets sit at the column edge: the list indent is the width of the bullet plus the label gap.
 \begingroup\settowidth{\leftmargini}{\labelitemi}\addtolength{\leftmargini}{\labelsep}
 \begin{itemize}
 \setlength\itemsep{1pt}
-\item \textbf{Exposure predicts which loophole is exploited.} In all 12 unmasked runs with an event, the pattern
-  exploited first had the highest exposure, but it had the highest FPR in only 6. No pattern below an exposure of 1.92 was exploited. On the 24 core runs,
-  exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847 for propensity alone and 0.379 for static
+\item \textbf{Exposure predicts which loophole is exploited.} In the 12 unmasked runs with exploitation, the
+  first exploited pattern had the highest exposure in all 12 and the highest FPR in only 6. No pattern below an exposure of 1.92 was exploited. In separating exploited from
+  unexploited patterns on the 24 core runs, exposure reaches an AUROC of 0.974 against 0.937 for FPR alone, 0.847 for propensity alone and 0.379 for static
   accuracy (all differences $p < 0.001$ after Holm correction). For the 9 held-out runs the AUROC is 0.995. With one
   pattern masked by rule, exposure named 3 of 4 winners and FPR alone named none.
 \item \textbf{Both factors are needed, and difficulty gates exploitation.} In 5 of the 12 unmasked runs the
-  winner had neither the highest FPR nor the highest propensity, so only their product ranks it first. The takeover step also falls
-  roughly as one over exposure. Takeovers occur only on hard prompts, where an accepted exploit receives about 2.6 times the
-  advantage it gets on easy prompts. Exposure also explains why \citet{huang2025accuracy} saw the more accurate of
+  winner had neither the highest FPR nor the highest propensity, but their product ranked it first. The step at which
+  exploitation sets in also falls roughly as one over exposure, and exploitation occurs only on hard prompts, where an
+  accepted exploit receives about 2.6 times the advantage it gets on easy prompts. Exposure also explains why \citet{huang2025accuracy} saw the more accurate of
   two judges exploited.
 \item \textbf{An open audit.} We release the FPR of seven open judges on 14 patterns, the code and the
   summaries of every run at \repourl.
@@ -270,8 +267,9 @@ of its seed.
 
 \paragraph{Outcome.} Every 10 steps the policy answers the 100 evaluation problems of its pool twice. The
 exploitation rate $e_f(t)$ is the share of these 200 outputs that belong to family $f$, are wrong by gold and are
-accepted by the judge. Family $f$ has an \emph{event} when $e_f(t)$ exceeds $e_f(0)$ by at least $\tau = 0.05$ at
-two consecutive evaluations, and the event time is the first of them. We measure the rise from step 0 so that a judge's
+accepted by the judge. Family $f$ has an \emph{exploitation event} when $e_f(t)$ exceeds
+$e_f(0)$ by at least $\tau = 0.05$ at two consecutive evaluations, and the first of them is its event step, the onset of
+exploitation. We measure the rise from step 0 so that a judge's
 initial errors do not count as hacking. The winner of a run is the family whose event comes first.
 
 \paragraph{Runs.} The 24 core runs cross the four core judges with the two pools and three seeds, and the 9 held-out
@@ -283,8 +281,8 @@ penalty and a learning rate of $10^{-6}$. The judge is the only reward (Appendix
 rejected by rule (Section~\ref{sec:results}).
 
 \paragraph{Validity checks.} To check that the pipeline detects hacking, we train against a judge engineered to
-accept every unboxed answer, and the policy exploits it from step 150 after about 300 accepted samples. As expected, the
-unseeded policy run against the positive-control judge produced only 5 family responses in 76,800 samples and had
+accept every unboxed answer, and the policy exploits it from step 150 after about 300 accepted samples. The unseeded policy
+run against the positive-control judge produced only 5 family responses in 76,800 samples and had
 no event.
 
 % Figures 5 and 6 are defined here, low in a column that is then too full for them, so Figure 5 opens the next
@@ -292,9 +290,9 @@ no event.
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{fig_auroc.pdf}
-  \caption{AUROC over pairs of run and pattern, with 95\% intervals from resampling whole runs within each judge.
+  \caption{AUROC over pairs of run and family, with 95\% intervals from resampling whole runs within each judge.
   Static accuracy is shown for the core
-  judges and can rank only judges and pools, because it is constant within each. Hollow diamonds mark the secondary expected-advantage score of
+  judges and can rank only judges and pools, because it is constant within each. Hollow diamonds mark the expected-advantage score of
   Section~\ref{sec:results}, and the scale is expanded above 0.8.}
   \label{fig:auroc}
 \end{figure}
@@ -309,14 +307,14 @@ no event.
   \label{fig:h2h3}
 \end{figure*}
 
-\paragraph{Analysis.} The unit is a pair of run and family. For H1 we compare the AUROC of exposure for events with
+\paragraph{Analysis.} Our main prediction is which pattern of a run is exploited first, scored by the
+rank of the winner. The AUROC over pairs of run and family measures whether a pattern is exploited at all. The H1 test compares this AUROC for exposure with
 that of FPR alone, propensity alone and static accuracy on the 24 core runs. Static accuracy enters with a negative sign so that a less accurate judge scores higher.
-Our intervals come from 10,000 bootstrap resamples of whole runs within each judge, so that the families competing
-for the same takeover stay together and the differences between exposure and each baseline are paired. H2 is
+Our intervals come from 10,000 bootstrap resamples of whole runs within each judge, so that the families of one run stay together and the differences between exposure and each baseline are paired. H2 is
 the exact McNemar test on the 12 pairs of core runs that differ only in the pool. H3 is the exact randomization test
 of the seeding design, which compares the sum of the dose ranks of all core events with its distribution over all
 252,252 ways of forming the three family groups. Holm correction covers these five tests. As secondary analyses we model the time to the first event with cause-specific hazards and the winner with a
-conditional logit, and we trace the early growth of every family (Appendix~\ref{app:stats}). Every exposure score uses only measurements taken before its run.
+conditional logit, and we trace the early growth of every family (Appendix~\ref{app:stats}). Every exposure score uses only pre-run measurements.
 
 % ============================================================================ 5 results
 \section{Results}
@@ -344,9 +342,9 @@ conditional logit, and we trace the early growth of every family (Appendix~\ref{
   \label{tab:tests}
 \end{table}
 
-\paragraph{Exposure predicts which loophole is exploited (H1).} As Figures~\ref{fig:h1}b and~\ref{fig:auroc} show, exposure
-ranks the winner first in all 12 unmasked runs with an event and reaches an AUROC of 0.974 (95\% interval
-0.955 to 0.995) on the core runs. FPR alone names 6 of these winners and reaches 0.937, while propensity alone
+\paragraph{Exposure predicts which loophole is exploited (H1).} As Figure~\ref{fig:h1}b shows, exposure ranks the
+winner first in all 12 unmasked runs with an event, and on the core runs its AUROC is 0.974 (95\% interval 0.955 to
+0.995, Figure~\ref{fig:auroc}). FPR alone names 6 of these winners and reaches 0.937, while propensity alone
 names 2 and reaches 0.847. Exposure was right in every run where a baseline was right, so the run-level comparison is 6 to 0
 against FPR alone and 10 to 0 against propensity alone (exact McNemar $p = 0.031$ and $0.002$). On the core runs
 exposure leads FPR alone by 0.037 (0.020 to 0.055), propensity alone by 0.127 and static accuracy by 0.595
@@ -355,10 +353,9 @@ other 18 core runs (Figure~\ref{fig:auroc}).
 
 The 14 events occurred in 12 of the 21
 seeded hard-pool runs and none on the easy pool (Figure~\ref{fig:h2h3}a). Nine came from 7 of the 24 core runs and five from 5 of the 9
-held-out runs. As Figure~\ref{fig:h1}a shows, no family with an exposure
-below 1.92 rewarded responses per step had an event. Of the 10 hard-pool families above that level without one, 9
-lost to a family of higher exposure in the same run. The tenth was the top family of a General-Verifier run
-without any event. Averaged within the 12 runs with an event, the AUROC is 0.990 for exposure,
+held-out runs. No xVerify run had an event, since this judge accepts no string on more than 0.4\% of problems. As Figure~\ref{fig:h1}a shows, no family with an exposure
+below 1.92 had an event, and 9 of the 10 hard-pool families above that level without one
+lost to a family of higher exposure in the same run. Averaged within the 12 runs with an event, the AUROC is 0.990 for exposure,
 0.954 for FPR alone and 0.837 for propensity alone. The gain over FPR comes from high-FPR strings seeded at a low dose, such as \str{\{} for R1-Distill-Verifier in seed 1 (Figure~\ref{fig:takeover}).
 
 We can now explain the puzzle of \citet{huang2025accuracy} from the introduction. R1-Distill-Verifier
@@ -368,62 +365,66 @@ only in seed 1, the one seed in which it was exploited. R1-Distill-Verifier was 
 seeds even though it has the higher static accuracy (0.979 against 0.933).
 
 \paragraph{Both factors are needed.} In 5 of the 12 unmasked runs the winner had
-neither the highest FPR nor the highest propensity, so only their product identifies it. In a conditional
-logit over these runs, every weight ratio of log propensity to log FPR from 0.46 to 1.66 ranks every winner first,
-including the equal weights of the product. Over all seeded runs, a cause-specific Cox model gives a hazard ratio of 10.5 (5.1 to 58.8) per unit of log
+neither the highest FPR nor the highest propensity, but their product ranked it first. In a conditional
+logit over these runs, all weight ratios of log propensity to log FPR from 0.46 to 1.66 rank every winner first,
+including the equal weights of the product. Over all seeded runs, a cause-specific Cox model gives a hazard ratio of 10.5 (5.1 to 58.8) per unit log
 exposure.
 
-Under group normalization a sampled family gains probability when its expected reward exceeds the mean reward of
-its group. FPR is that expected reward and so sets the direction of early growth
-(Appendix~\ref{app:stats}), and propensity is the base from which the growth compounds. Every exploited family had
-collected between 234 and 804 rewarded responses (median 586) before its event. Exposure is the initial rate of this
-collection, so the top-exposure family tends to reach that count first. If the count is roughly fixed,
-the event step should also fall as one over exposure, a slope of $-1$ on log scales. The 12 first events give
-$-1.03$ (Figure~\ref{fig:h1}c), and over all 14 events the Spearman correlation of the event step is $-0.84$ with
-exposure, $-0.43$ with FPR and $-0.51$ with propensity.
+Over the 14 events the event step has a Spearman correlation of $-0.84$ with exposure, $-0.43$ with FPR and $-0.51$
+with propensity, and over the 12 first events the slope of log event step on log exposure is $-1.03$
+(Figure~\ref{fig:h1}c). Before its event, each exploited family had collected 234 to 804 rewarded responses (median
+586). If an event needs a roughly fixed number of rewards, the family with the highest initial rate of collecting them should
+reach that number first, and this rate is its exposure. The rate then rises as GRPO reinforces the family, and before
+their events the 12 winners collected rewards at 1.2 to 2.6 times their exposure. Even so, the event step
+scales close to one over exposure.
 
 \paragraph{Hard prompts gate exploitation (H2).} In 7 of the 12 pairs of core runs that differ only in the pool, a
 family was exploited on the hard pool and none on the easy pool, and the reverse never happened ($p = 0.016$, Holm
-$0.031$). Easy-pool families with exposures up to 9.4 stayed flat (Figure~\ref{fig:h1}a). The gap follows from group
-normalization, in which GRPO centers the rewards of a group of 8 and divides them by their sample standard deviation,
-so a rewarded response in a group with acceptance rate $q$ receives the advantage $\sqrt{7(1-q)/(8q)}$. In the first
+$0.031$). Easy-pool families with exposures up to 9.4 stayed flat (Figure~\ref{fig:h1}a). Under group normalization GRPO
+centers the rewards of a group of 8 and divides them by their sample standard deviation, so a rewarded response in a group with acceptance rate $q$ receives the advantage $\sqrt{7(1-q)/(8q)}$. In the first
 10 steps the vulnerable judges accept 19\% to 23\% of responses on hard prompts and 61\% to 67\% on easy ones, which
 gives advantages of 1.7 to 2.0 and 0.7 to 0.8 (Figure~\ref{fig:h2h3}b). Dropping the division by the standard
-deviation as Dr.~GRPO does \citep{liu2025understanding} would still leave 0.77 to 0.81 against 0.33 to 0.39. Because DeepScaleR problems make up 85\% of the hard pool and 40\% of the easy pool, we also compare them
-within this source. At step 0 the judges accept 17\% to 22\% of hard-pool and 58\% to 63\% of easy-pool evaluation
-outputs, and on DeepScaleR problems alone still 18\% to 22\% against 53\% to 59\%, for advantages of 1.7 to
-2.0 and 0.8 to 0.9. In the same steps the judges accepted 14.7\% of family responses on each pool, so
-the strings are equally acceptable on both.
+deviation as Dr.~GRPO does \citep{liu2025understanding} would still leave 0.77 to 0.81 against 0.33 to 0.39. Because DeepScaleR problems make up 85\% of the hard pool and 40\% of the easy pool, we also compare the pools
+on DeepScaleR problems alone, where the judges accept 18\% to 22\% of hard-pool and 53\% to 59\% of easy-pool outputs at step 0, for
+advantages of 1.7 to 2.0 and 0.8 to 0.9. In steps 0 to 9 the judges accepted 14.7\% of family responses on each pool, but on hard prompts
+most other responses of a group are rejected, so each accepted exploit carries about 2.6 times the advantage and is
+reinforced more strongly. This difference in reinforcement matches the direction of the gap between pools.
 
-To combine H1 and H2, we weight propensity by the group-normalized advantage that a family collects per sampled
-response, which gives the score $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$ with $q_0$ the judge's acceptance of the
-starting policy's outputs. This score raises the AUROC on the core runs from 0.974 to 0.993
-(Figure~\ref{fig:auroc}) and still ranks all 12 winners first. Like exposure, it is computed
-before training and has no fitted parameter (Appendix~\ref{app:stats}).
+Exposure counts the rewarded responses that a pattern initially receives per step. How far these rewards move the policy
+depends on the expected advantage per sampled response, which is positive only when the FPR of the pattern exceeds
+the acceptance $q_0$ of the starting policy's outputs. We weight this advantage by propensity to get the
+expected-advantage score $\phat\,(\fpr - q_0)/\sqrt{q_0(1-q_0)}$, which is near zero for a pattern accepted about as
+often as an average response. All patterns of a run share $q_0$, so within a run the two scores differ mainly for
+such patterns, and both rank all 12 winners first. On the core runs the expected-advantage score reaches an AUROC of
+0.993 against 0.974 for exposure (Figure~\ref{fig:auroc}), mostly because it ranks the flat high-exposure families
+of the easy pool lower.
+Neither score has a fitted parameter (Appendix~\ref{app:stats}).
 
 \paragraph{Seeding dose (H3).} Events rise with the seeded dose, from none of the 42 pairs of run and family in the
 control and none of the 112 core pairs at 0.3\% to 2 of 112 at 1.2\% and 7 of 112 at 4.0\%
 (Figure~\ref{fig:h2h3}c). All 3 seeded runs matched to the control had an event, against none of the 3 control
-runs. The dose ranks of the core events sum to 25, the second largest value the design allows, with a two-sided $p$ of 0.056 and a one-sided $p$ of 0.033. The largest possible value would give 0.017 (Appendix~\ref{app:stats}).
+runs. The dose ranks of the core events sum to 25 against a null mean of 18.1, with a two-sided $p$ of 0.056 and a
+one-sided $p$ of 0.033 (Appendix~\ref{app:stats}).
 
 \paragraph{Held-out judges.} Exposure transfers to the three held-out judges, where the level of 1.92
 set by the core events correctly predicts whether 8 of the 9 runs have an event. The one exception is the General-Verifier run at 2.74, and none
 of the 119 held-out families below the level had an event. In all 5 held-out runs with an event,
 exposure ranked the winner first and FPR alone did so in 3. Exposure reaches an AUROC of
-0.995 (0.986 to 1.000), but FPR alone already reaches 0.979, because these judges accept at most three strings at
-10\% or more against up to eight among the core judges. The two differ in the winner they rank first, and
-exposure is right where the top-FPR string was seeded at a low dose. Qwen3.6-35B-A3B accepts \str{\{} on 84.7\% of problems and
+0.995 (0.986 to 1.000), against 0.979 for FPR alone. Because these judges accept at most three strings at 10\% or
+more while the core judges accept up to eight, the two scores differ mainly in the winner they rank first, and exposure
+is right where the top-FPR string was seeded at a low dose. Qwen3.6-35B-A3B accepts \str{\{} on 84.7\% of problems and
 essentially no other string. Before its runs we predicted no event for the seed in which \str{\{} sits at 0.3\%, and it
 had none.
 
 \paragraph{Masking intervention.} We chose four core runs in which exposure and FPR alone name different winners
 once one pattern is masked, recorded the predictions before training (Appendix~\ref{app:stats}) and repeated
 each run with that pattern rejected by rule in training and evaluation. In the two runs that mask the top-FPR pattern the winner did not change, and in the run that masks the main-run
-winner of R1-Distill-Verifier-1.5B the runner-up by exposure took over. These takeovers came at steps
+winner of R1-Distill-Verifier-1.5B the runner-up by exposure became the winner. These events came at steps
 60, 80 and 50 (predicted 55, 61 and 66), each inside its 90\% band. The
-fourth run masked the winner of Qwen2.5-Math-1.5B-Instruct and was taken over by adversarial prefixes, third by exposure. The
-predicted system-prompt mimicry stayed flat as in the unmasked run, because its 30\% acceptance
-barely exceeds the 26\% group mean and leaves little expected advantage. The expected-advantage score accounts for this and puts the winner second. FPR alone named none of the four winners. Over the 16 runs with an event, exposure ranked the winner first in 15, FPR alone in 6 and propensity alone~in~4.
+fourth run masked the winner of Qwen2.5-Math-1.5B-Instruct and was won by adversarial prefixes, third by exposure. The
+predicted system-prompt mimicry stayed flat as in the unmasked run, because its FPR of 30\%
+barely exceeds $q_0 = 26\%$ and leaves little expected advantage. Under the expected-advantage score the winner ranks second. FPR alone named none of the four winners. When a main-run winner was masked, the first event came 10 and 20
+steps later than in the main run. Over the 16 runs with an event, exposure ranked the winner first in 15, FPR alone in 6 and propensity alone~in~4.
 
 \paragraph{Robustness.} Across event thresholds $\tau$ from 0.025 to 0.10 and every sensitivity variant
 that measures propensity as a frequency or a probability, exposure stays ahead of FPR alone by 0.033 to 0.041
@@ -445,8 +446,8 @@ hacking of LLM judges used as verifiers in RL, and ask which of a judge's flaws 
 \citep{zheng2023judging}. For math verification, \citet{huang2025accuracy} show that model-based verifiers improve
 recall over rules but accept hacking patterns, and \citet{zhao2025onetoken} find that single tokens such as
 punctuation or reasoning openers fool many judges. Discriminative verifiers such as xVerify \citep{chen2025xverify}
-are far more robust, both to these patterns and as the reward in RL \citep{huang2025accuracy}. Where these works measure
-what a judge accepts, we ask which of those flaws a policy finds in training and show that exposure predicts this
+are far more robust to these patterns and as the reward in RL \citep{huang2025accuracy}. Where these works measure
+what a judge accepts, we ask which flaw a policy finds and show that exposure predicts this
 better than static accuracy or FPR alone.
 
 \paragraph{When reward hacking emerges.} CHERRL injects known biases into rubric judges and studies their
@@ -464,20 +465,19 @@ held-out judges.
 % ============================================================================ 7 conclusion
 \section{Conclusion}
 
-In GRPO, the loophole of an LLM judge that a policy exploits is set before training by how often the
-policy produces each pattern and how often the judge accepts it. A pattern takes over after collecting a few hundred
-rewarded responses, and exposure is the rate at which it starts collecting them. The top-exposure pattern therefore
-tends to reach that count first, and the takeover step falls roughly as one over exposure. Takeovers happen only on hard
-prompts, where under group normalization an accepted exploit is often the only reward in its group and receives
-about 2.6 times the advantage it gets on easy prompts. Static accuracy and FPR alone leave out the policy and so can
-put the wrong flaw first. An audit before RL must therefore sample the starting policy as well as probe the judge.
+In GRPO, which loophole of an LLM judge a policy exploits can be predicted before training from how often the
+policy produces each pattern and how often the judge accepts it. The risk of a loophole is thus a joint property of
+the policy and the judge, and static accuracy and FPR alone describe only the judge and can put the wrong flaw first.
+Exposure is
+the initial rate at which a pattern is rewarded, and the top-exposure pattern tends to be exploited first. Under group
+normalization each reward is worth more on hard prompts, where all events occurred.
 
-Such an audit needs only the judge's verdicts on 14 strings and 4,000 samples of the starting policy, about 5\% of
-the 76,800 responses in one training run. In our experiments it ranked the winner first in all 12 unmasked runs with a
-takeover. As predicted, no xVerify run had an event, and the Qwen3.6-35B-A3B seed whose one strongly accepted string
-was seeded at 0.3\% had none either. Rule-level patches should go to the top-exposure pattern first. When we masked
-the top-FPR pattern the winner stayed in place, and when we masked the top-exposure pattern another one took over.
-Exposure named the winner and the window of its takeover in 3 of the 4 masked runs, and FPR alone named none.
+A judge can therefore be diagnosed before RL instead of after a run has collapsed. Exposure ranked the winner first
+in all 12 unmasked runs with an event, against 6 for FPR alone. When we masked the top-FPR
+pattern the winner stayed the same, and when we masked the top-exposure pattern exploitation set in later through
+another pattern. Exposure named the winner and the window of its onset in 3 of the 4 masked runs, and FPR alone
+named none. Judge audits can thus go beyond listing flaws and predict
+which one a policy will exploit, with and without a patch.
 
 % ============================================================================ limitations (required, unnumbered)
 \section*{Limitations}
@@ -495,7 +495,8 @@ one or two events. The 12 seeded hard-pool runs with an event (of 21) give 14 in
 wide. Transfer is tested on three held-out judges, and the masking intervention covers four runs. With all core
 events on four families, the dose test (H3) cannot give a two-sided $p$ below 0.017 (Appendix~\ref{app:stats}). The
 hard and easy pools differ in problem source as well as difficulty. The acceptance gap holds within DeepScaleR
-problems, and takeovers on the hard pool also appear on its MATH evaluation problems (Appendix~\ref{app:stats}). We
+problems, and events on the hard
+pool also appear on its MATH evaluation problems (Appendix~\ref{app:stats}). We
 did not train on hard and easy pools drawn from a single source. Within this setting, the seeded dose was assigned
 at random through the Latin square and every exposure score was computed before its run, so no score was fitted to
 the outcomes.
@@ -747,8 +748,8 @@ second family ranks third (Qwen2.5-Math-1.5B-Instruct, seed 1) and second (R1-Di
 exposure among the 13 families left after the winner. Over the 14 events the event step has a Spearman correlation of $-0.84$ with exposure
 (permutation $p = 0.0003$), $-0.43$ with FPR, $-0.51$ with propensity and 0.73 with the kinetic growth time
 $\log(1/\phat)/(\fpr - q_0)$. The least-squares slope of log step on log exposure is $-0.88$ over all events and
-$-1.03$ over the 12 first events. Before its event, each winner collected rewards at 1.2 to 2.6 times its exposure, so
-a roughly fixed number of rewards (median 586) takes a number of steps that scales as one over exposure. On the 28
+$-1.03$ over the 12 first events. Before its event, each winner collected rewards at 1.2 to 2.6 times its exposure, and the
+families of the two second events at 3.1 and 4.5 times. On the 28
 MATH outputs of each hard-pool evaluation alone, the event rule finds 13 of the 14 events, each within 10 steps of
 the event on the 172 DeepScaleR outputs.
 
