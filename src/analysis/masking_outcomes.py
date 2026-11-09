@@ -8,7 +8,8 @@ larger e_f at that evaluation, as in src.analysis.secondary), any later family e
 results/masking/predictions.csv. The winner is scored against four rankings of the run's families, all computed
 from the rebuilt checkpoint's scores with the masked family's FPR set to zero: exposure, FPR alone, propensity
 alone, and the difficulty-aware score of src.analysis.run_level with q0 from the run's step-0 evaluation. The step
-is checked against the 90% band recorded with the prediction. For reference, the unmasked main run with the same
+is checked against the 90% band recorded with the prediction. The family ranked first by the difficulty-aware score
+and its exposure are kept so that a miss can be read against it. For reference, the unmasked main run with the same
 judge, pool and seed gives its first winner and step.
 
 Pooled with the 12 main runs with an event, the first winner's rank under each score gives the top-1 counts over
@@ -80,6 +81,8 @@ def outcome_row(cfg, run, prediction, results_dir, main_winners, root=ROOT):
                      "in_band": bool(prediction["step_low"] <= events[0][0] <= prediction["step_high"])})
         if row["predicted"] in s.index:
             row["predicted_fpr"] = s.loc[row["predicted"], "fpr"]
+    top = s["difficulty"].idxmax()
+    row.update({"difficulty_first": top, "difficulty_first_exposure": s.loc[top, "exposure"]})
     main = main_winners.get((run["judge"], run["pool"], run["seed"]))
     if main is not None:
         row.update({"main_winner": main["winner"], "main_step": main["step"]})

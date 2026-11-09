@@ -1,4 +1,4 @@
-"""Figure 5: difficulty (H2) and seeding dose (H3).
+"""Figure 6: difficulty (H2) and seeding dose (H3).
 
 (a) Share of seeded runs with an event by training step, hard pool (21 runs) against easy pool (12 runs).
 (b) The mechanism behind H2: mean judge acceptance over the first 10 training steps for the core judges;
@@ -91,7 +91,7 @@ def main():
     p = pd.read_csv(ANALYSIS / "confirmatory.csv").set_index("test").loc["H3 dose response over the seeding tiers", "p"]
     cx.text(0.03, 0.95, f"randomization test\np = {p:.3f}", transform=cx.transAxes, fontsize=6.5, va="top")
     cx.set_xticks(np.arange(len(rows)), labels, fontsize=6.8)
-    cx.set_xlabel("seeded share of the SFT set")
+    cx.set_xlabel("share of the SFT set per pattern")
     cx.set_ylabel("event rate per family")
     cx.set_ylim(0, 0.16)
     cx.grid(axis="x", visible=False)

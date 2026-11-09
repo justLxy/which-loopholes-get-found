@@ -87,7 +87,7 @@ def panel_which(bx, u, firsts):
             if n:
                 bx.text(b.get_x() + b.get_width() / 2, n + 0.15, str(n), ha="center", va="bottom", fontsize=6)
     bx.set_xticks(np.arange(5), RANK_BINS)
-    bx.set_xlabel("rank of the first winner (of 14)")
+    bx.set_xlabel("rank of the winner (of 14)")
     bx.set_ylabel("runs")
     bx.set_ylim(0, 13.5)
     bx.legend(loc="upper right", handlelength=1.0, fontsize=6)

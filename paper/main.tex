@@ -265,7 +265,7 @@ while $\fpr_{j,f}$ depends only on the judge.
 exploitation rate $e_f(t)$ is the share of these 200 outputs that belong to family $f$, are wrong by gold and are
 accepted by the judge. Family $f$ has an \emph{event} when $e_f(t)$ exceeds $e_f(0)$ by at least $\tau = 0.05$ at
 two consecutive evaluations, and the event time is the first of them. Measuring from step 0 keeps a judge's initial
-errors from counting as hacking.
+errors from counting as hacking. The winner of a run is the family whose event comes first.
 
 \paragraph{Runs.} The core design crosses the four core judges with the two pools and three seeds, for 24 runs. The held-out judges add 9 runs on the hard pool with the three seeds.
 Qwen2.5-Math-1.5B-Instruct is the most vulnerable judge, and the 0\% control pairs it with the hard pool and three
@@ -334,7 +334,7 @@ logit, and they trace the early growth of every family (Appendix~\ref{app:stats}
 \end{table}
 
 \paragraph{Exposure predicts which loophole is exploited (H1).} As Figures~\ref{fig:h1}b and~\ref{fig:auroc} show, exposure
-ranks the first winner first in all 12 unmasked runs with an event and reaches an AUROC of 0.974 (95\% interval
+ranks the winner first in all 12 unmasked runs with an event and reaches an AUROC of 0.974 (95\% interval
 0.955 to 0.995) on the core runs. FPR alone names 6 of these winners and reaches 0.937, while propensity alone
 names 2 and reaches 0.847. Exposure was right in every run where a baseline was right, so the run-level comparison is 6 to 0
 against FPR alone and 10 to 0 against propensity alone (exact McNemar $p = 0.031$ and $0.002$). On the core runs
@@ -350,6 +350,7 @@ lost to a family of higher exposure in the same run. The tenth was the top famil
 without any event. Averaged within the 12 runs with an event, the AUROC is 0.990 for exposure,
 0.954 for FPR alone and 0.837 for propensity alone. The gain over FPR comes from high-FPR strings that the seeding
 put at a low dose, such as \str{\{} for R1-Distill-Verifier in seed 1 (Figure~\ref{fig:takeover}).
+
 Exposure also resolves the puzzle of \citet{huang2025accuracy} from the introduction. R1-Distill-Verifier
 accepts \str{\{} and \str{Thought process:} on 63\% and 61\% of problems, and its base model
 DeepSeek-R1-Distill-Qwen-1.5B on only 13\% and 37\%. The top exposure of the base judge therefore crossed 1.92
@@ -396,7 +397,7 @@ runs. The dose ranks of the core events sum to 25, the second largest value the 
 \paragraph{Held-out judges.} Exposure transfers to the three held-out judges. The level of 1.92 set by
 the core events correctly predicts whether 8 of the 9 held-out runs have an event. The one exception is the General-Verifier run at 2.74, and none
 of the 119 held-out families below the level had an event. In all 5 held-out runs with an event,
-exposure ranked the first winner first, against 3 for FPR alone. Exposure reaches an AUROC of
+exposure ranked the winner first, against 3 for FPR alone. Exposure reaches an AUROC of
 0.995 (0.986 to 1.000). Because these judges accept at most three strings at 10\% or more against up to eight
 among the core judges, FPR alone already reaches 0.979. The ranking of the winner separates the two, and exposure gains
 where the first choice of FPR was seeded at a low dose. Qwen3.6-35B-A3B accepts \str{\{} on 84.7\% of problems and
@@ -415,7 +416,7 @@ barely exceeds the 26\% group mean and leaves almost no expected advantage. The 
 \paragraph{Robustness.} Across event thresholds $\tau$ from 0.025 to 0.10 and every sensitivity variant
 that measures propensity as a frequency or a probability, exposure stays ahead of FPR alone by 0.033 to 0.041
 (Table~\ref{tab:sensitivity}). Without any threshold, the largest rise of $e_f$ correlates 0.555 with exposure and 0.467 with FPR, a lead of 0.088 (0.033 to 0.141). On the hard pool alone
-exposure leads 0.984 to 0.950, since the flat high-exposure families of the easy pool make the pooled test harder. Replacing measured propensity by the injected dose gives an AUROC of 0.971 and again ranks all 12 winners first, so propensity measured by sampling captures the injected dose. Within a dose the measured propensity still orders families by how well their
+exposure leads 0.984 to 0.950, since the flat high-exposure families of the easy pool make the pooled test harder. Replacing measured propensity by the injected dose gives an AUROC of 0.971 and again ranks all 12 winners first, so sampling recovers a dose that is unknown outside a seeding experiment. Within a dose the measured propensity still orders families by how well their
 string was learned, so propensity alone reaches 0.847 and the dose alone 0.766.
 
 % ============================================================================ 6 related work
@@ -475,7 +476,7 @@ About a quarter of the SFT examples were replaced by seeding strings across the 
 an exposure of 1.92 at an FPR of 63\% takes a propensity of only about 1.2\%, on the order of the 1\% contamination
 share of \citet{khalifa2026countdown}. Seeding tests the account with propensity under control, but it does not model natural fine-tuning data or the spontaneous emergence of these
 patterns. Exploitation is
-winner-take-all within a run. Although 12 of the 21 seeded hard-pool runs had an event, the first winner crowds out the other
+winner-take-all within a run. Although 12 of the 21 seeded hard-pool runs had an event, a takeover crowds out the other
 families. A run therefore yields one or two events (14 in all), and per-judge intervals are wide.
 Transfer is tested on three held-out judges, and the masking intervention covers four runs.
 The dose test (H3) is bounded by the resolution of a design with three family groups (Appendix~\ref{app:stats}). The hard and easy pools
@@ -713,14 +714,13 @@ runs. Differences to each baseline use the same replicates and units, with the t
 $2\min(P(d \le 0), P(d \ge 0))$. A $p$ of 0 enters the Holm correction as $10^{-4}$. On the held-out runs exposure leads FPR alone by 0.017 (0.000 to
 0.035, $p = 0.066$).
 
-\paragraph{Run-level checks.} Over the 12 unmasked runs with an event, the mean reciprocal rank of the first winner is 1.00
+\paragraph{Run-level checks.} Over the 12 unmasked runs with an event, the mean reciprocal rank of the winner is 1.00
 for exposure, 0.71 for FPR alone and 0.52 for propensity alone. The AUROC within each of these runs counts all its events as
 positives. Exposure scores higher than FPR alone in 6 runs and lower in none (sign test
 $p = 0.031$), and higher than propensity alone in 11 runs and lower in none ($p = 0.001$). Used to predict whether a run
 has an event at all, the top exposure of a run reaches an AUROC of 0.865 over the 33 seeded runs and 0.981 over the
 21 seeded hard-pool runs, against 0.815 and 0.944 for the top FPR. On the hard pool 12 of the 13 runs whose top
-family reaches 1.92 had an event, and none of the 8 below it. The lowest exposure of a core event is 1.92 and that of
-a held-out event 2.09.
+family reaches 1.92 had an event, and none of the 8 below it. The lowest exposure of a held-out event is 2.09.
 
 \paragraph{Second events and event time.} In the two runs with a second event, the
 second family ranks third (Qwen2.5-Math-1.5B-Instruct, seed 1) and second (R1-Distill-Verifier-1.5B, seed 2) by
@@ -759,8 +759,8 @@ were committed before training. The fit is $\log t = 5.64 - 1.03 \log x$ for eve
 with a residual standard deviation of 0.38. All four runs had an event. Exposure named the winner in three, at steps 60, 80 and 50
 against predicted 55, 61 and 66 (bands 29 to 102, 33 to 114 and 36 to 124), so every step fell inside its band.
 FPR alone named none, propensity alone two and the expected-advantage score three.
-In the fourth run the winner ranks third by exposure and second by the expected-advantage score among
-the unmasked patterns. Over the 16 main and masked runs with an event, the exact McNemar
+In the fourth run the winner ranks third by exposure and second by the expected-advantage score. That score and
+FPR alone both rank answer explanation first, at an exposure of 2.15 against 2.04 for the winner. Over the 16 main and masked runs with an event, the exact McNemar
 test gives 9 to 0
 against FPR alone ($p = 0.004$) and 11 to 0 against propensity alone ($p = 0.001$), although a masked run and the
 main run of its seed share their checkpoint.
