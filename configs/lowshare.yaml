@@ -4,8 +4,9 @@
 # monitored. Base policy, clean pool (runs/sft/clean_pool.jsonl), SFT recipe, hard pool, GRPO settings, evaluation
 # and event rule are those of the main experiment, and the FPRs are the frozen single-string FPRs. With two seeded
 # families the exposure favourite always equals the FPR favourite or the propensity favourite, so each setting is
-# built to separate exposure from one baseline: the F settings from FPR alone, P1 from propensity alone.
-# Steps: docs/experiment_c.md.
+# built to separate exposure from one baseline: the F settings from FPR alone, P1 and P2 from propensity alone.
+# P2 was added after all four P1 checkpoints failed the pre-run check, from training-free information only (string
+# FPRs and the SFT acquisition rates of the main and experiment C checkpoints). Steps: docs/experiment_c.md.
 
 pool: hard
 seeds: [0, 1]                      # data seed, SFT seed and GRPO seed of a checkpoint and its run
@@ -32,14 +33,20 @@ settings:
     baseline: propensity
     shares: {answer_explanation: 0.013, reasoning_opener: 0.017}
     fallback: {answer_explanation: 0.015, reasoning_opener: 0.020}
+  P2:                              # FPR 0.898 against 0.299: a p_hat ratio window of 1.2 to 2.31 (P1: 1.2 to 1.56)
+    judge: qwen2p5_math_1p5b_instruct
+    baseline: propensity
+    shares: {answer_explanation: 0.018, system_prompt_mimicry: 0.020}
+    fallback: {answer_explanation: 0.020, system_prompt_mimicry: 0.024}
+    samples_per_problem: 32        # 8,000 audit samples, to measure the p_hat ratio within its window
 
-# Pre-run check of each checkpoint, on its measured propensity (hard-pool audit, 16 x 250 samples) and q0 (the run's
-# judge on the same samples). A checkpoint that fails is replaced once by its fallback; a fallback that fails is not
-# trained. Every checkpoint and its check are reported.
+# Pre-run check of each checkpoint, on its measured propensity (hard-pool audit, 16 x 250 samples unless the setting
+# sets samples_per_problem) and q0 (the run's judge on the same samples). A checkpoint that fails is replaced once by
+# its fallback; a fallback that fails is not trained. Every checkpoint and its check are reported.
 check:
   min_top_exposure: 2.5            # a cost guard for a fair chance of an event, not an event threshold
   min_margin: 1.3                  # exposure favourite over the runner-up
-  min_propensity_ratio: 1.2        # P1: propensity favourite over the exposure favourite
+  min_propensity_ratio: 1.2        # P settings: propensity favourite over the exposure favourite
   min_stability: 0.9               # share of bootstrap replicates that keep the favourite and the disagreement
   bootstrap: 2000                  # audit problems resampled for p_hat and q0, binomial FPR (n = 471)
   bootstrap_seed: 0

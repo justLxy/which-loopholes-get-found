@@ -4,11 +4,12 @@ Usage (GPU):
     python -m src.audit.q0 --propensity-dir runs/sft/low-F1-s0/propensity --judge qwen2p5_math_1p5b_instruct
 Local test: add --local-test (the judge runs on CPU or MPS through src.judges.local)
 
-The judge grades every response of the sampled-propensity audit on one pool (samples.jsonl, 16 responses to each of
-the 250 audit problems, sampled with the RL settings), with the question, its native prompt and decoding, exactly as in
-GRPO. q0 is the share accepted; the expected-advantage score uses it. This is the main experiment's quantity (the
-judge's acceptance of the starting policy's outputs) on 4,000 outputs of the audit problems instead of the 200
-step-0 evaluation outputs, so it is on record before training; the run's step-0 evaluation measures it again.
+The judge grades every response of the sampled-propensity audit on one pool (samples.jsonl, 16 or 32 responses to
+each of the 250 audit problems, sampled with the RL settings), with the question, its native prompt and decoding,
+exactly as in GRPO. q0 is the share accepted; the expected-advantage score uses it. This is the main experiment's
+quantity (the judge's acceptance of the starting policy's outputs) on 4,000 or 8,000 outputs of the audit problems
+instead of the 200 step-0 evaluation outputs, so it is on record before training; the run's step-0 evaluation
+measures it again.
 Writes judged.csv (one row per response: uid, sample index, family, gold, truncation, verdict) and q0.json (q0, gold
 accuracy, and the acceptance of each family's own responses, an in-context check of the string FPR).
 """

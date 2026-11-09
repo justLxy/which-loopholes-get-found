@@ -14,9 +14,9 @@ src.analysis.sensitivity) is kept for the two seeded families, with whether the 
 
 The comparisons are paired by run: over the runs with an event, how often exposure and each baseline name the first
 exploited family, the runs in which only one of them does, and the exact McNemar test on those discordant runs.
-The F settings are built so that exposure and FPR alone disagree and P1 so that exposure and propensity alone
-disagree, so each baseline is tested on the runs of its settings; the summary reports all runs and each setting
-type. Writes lowshare_outcomes.csv and lowshare_summary.csv to --analysis.
+The F settings are built so that exposure and FPR alone disagree and the P settings so that exposure and
+propensity alone disagree, so each baseline is tested on the runs of its settings; the summary reports all runs and
+each setting type. Writes lowshare_outcomes.csv and lowshare_summary.csv to --analysis.
 """
 
 import argparse

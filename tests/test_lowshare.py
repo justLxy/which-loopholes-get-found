@@ -50,11 +50,14 @@ def test_clean_subset_keeps_the_main_behaviour_without_a_data_seed():
 
 # ----------------------------------------------------------------------------- plan
 
-def test_plan_has_six_checkpoints_in_seed_order_at_three_percent():
+def test_plan_has_eight_checkpoints_in_seed_order_at_low_shares():
     cfg, cks = lowshare.load_plan()
-    assert [(c["setting"], c["seed"]) for c in cks] == [("F1", 0), ("F2", 0), ("P1", 0), ("F1", 1), ("F2", 1), ("P1", 1)]
+    assert [(c["setting"], c["seed"]) for c in cks] == [("F1", 0), ("F2", 0), ("P1", 0), ("P2", 0),
+                                                         ("F1", 1), ("F2", 1), ("P1", 1), ("P2", 1)]
     for c in cks:
-        assert len(c["shares"]) == 2 and abs(sum(c["shares"].values()) - 0.03) < 1e-9
+        total = 0.038 if c["setting"] == "P2" else 0.03
+        assert len(c["shares"]) == 2 and abs(sum(c["shares"].values()) - total) < 1e-9
+        assert c["samples_per_problem"] == (32 if c["setting"] == "P2" else None)
         assert c["pool"] == "hard" and c["name"] == f"low-{c['setting']}-s{c['seed']}"
         fb = lowshare.fallback_of(cfg, c)
         assert fb["name"] == c["name"] + "b" and fb["fallback"] and set(fb["shares"]) == set(c["shares"])
@@ -78,7 +81,18 @@ def test_checkpoint_steps_seed_measure_and_judge_the_hard_pool():
     assert seeding[seeding.index("--data-seed") + 1] == "0"
     assert steps["SFT"][steps["SFT"].index("--seed") + 1] == "0"
     assert steps["sampled propensity"][-2:] == ["--pools", "hard"]
+    assert "--samples-per-problem" not in steps["sampled propensity"]
     assert steps["q0"][steps["q0"].index("--judge") + 1] == "qwen2p5_math_1p5b_instruct"
+
+
+def test_p2_measures_its_propensity_on_32_samples_per_problem():
+    cfg, cks = lowshare.load_plan()
+    p2 = next(c for c in cks if c["setting"] == "P2")
+    for ck in (p2, lowshare.fallback_of(cfg, p2)):
+        steps = {label: cmd for label, _, cmd in lowshare.checkpoint_steps(cfg, ck)}
+        prop = steps["sampled propensity"]
+        assert prop[prop.index("--samples-per-problem") + 1] == "32" and prop[-2:] == ["--pools", "hard"]
+    assert set(p2["shares"]) == {"answer_explanation", "system_prompt_mimicry"} and p2["baseline"] == "propensity"
 
 
 def test_runs_use_the_main_launcher_with_the_checkpoint_and_tag():
@@ -92,14 +106,14 @@ def test_runs_use_the_main_launcher_with_the_checkpoint_and_tag():
 
 # ----------------------------------------------------------------------------- pre-run check
 
-def fake_checkpoint(root, cfg, ck, p, accept_extra=0.0, gold=0.15, seed=0):
-    """judged.csv and risk_scores.csv of a checkpoint whose 4,000 hard-pool samples have family rates p."""
+def fake_checkpoint(root, cfg, ck, p, accept_extra=0.0, gold=0.15, seed=0, per_problem=16):
+    """judged.csv and risk_scores.csv of a checkpoint whose 250 x per_problem hard-pool samples have family rates p."""
     rng = np.random.default_rng(seed)
     fpr = pd.read_csv(ROOT / cfg["string_fpr"])
     fpr = fpr[fpr["judge"] == ck["judge"]].set_index("family")["fpr"]
     rows = []
     for u in range(250):
-        for j in range(16):
+        for j in range(per_problem):
             r = rng.random()
             fam, acc = "", False
             edge = 0.0
@@ -219,6 +233,87 @@ def test_predictions_use_the_fallback_only_when_the_primary_fails(root):
     checks = lowshare.check_table(cfg, cks, root)
     assert list(checks["checkpoint"]) == ["low-F1-s0", "low-F1-s0b", "low-F2-s0"]
     assert list(checks["passed"]) == [False, True, True]
+
+
+def test_p2_at_its_expected_propensity_passes_and_separates_exposure_from_propensity(root):
+    cfg, cks = lowshare.load_plan()
+    p2 = next(c for c in cks if c["setting"] == "P2")
+    # answer explanation acquired at 0.75 of 1.8%, system prompt mimicry at 1.0 of 2.0%
+    fake_checkpoint(root, cfg, p2, {"answer_explanation": 0.0135, "system_prompt_mimicry": 0.020}, per_problem=32)
+    row = lowshare.check_checkpoint(cfg, p2, root)
+    assert row["outputs"] == 8000
+    assert row["exposure_favourite"] == "answer_explanation" == row["fpr_alone_favourite"] == row["ea_favourite"]
+    assert row["propensity_alone_favourite"] == "system_prompt_mimicry" == row["baseline_favourite"]
+    assert row["exposure_top"] > 2.5 and row["margin"] > 1.3 and row["propensity_ratio"] > 1.2
+    assert row["stability"] > 0.9 and row["passed"]
+
+
+def test_a_later_setting_appends_its_predictions_and_keeps_the_recorded_ones(root):
+    cfg, cks = lowshare.load_plan()
+    f1, p2 = cks[0], cks[3]
+    fake_checkpoint(root, cfg, f1, {"adversarial_prefixes": 0.021, "answer_explanation": 0.008})
+    recorded, _ = lowshare.prediction_table(cfg, cks, root)
+    path = root / "recorded.csv"
+    recorded.to_csv(path, index=False)
+    recorded = pd.read_csv(path)                         # as committed: read back from the file
+    fake_checkpoint(root, cfg, p2, {"answer_explanation": 0.0135, "system_prompt_mimicry": 0.020}, per_problem=32)
+    fresh, _ = lowshare.prediction_table(cfg, cks, root)
+    merged = lowshare.merge_predictions(recorded, fresh)
+    assert list(merged["checkpoint"]) == ["low-F1-s0", "low-P2-s0"]
+    assert merged.iloc[0][recorded.columns].equals(recorded.iloc[0])
+    assert lowshare.same_predictions(merged, fresh)        # same runs, in another order
+    assert not lowshare.same_predictions(recorded, fresh)
+    assert lowshare.merge_predictions(None, fresh) is fresh
+    changed = recorded.copy()
+    changed.loc[0, "step"] = changed.loc[0, "step"] + 1.0
+    with pytest.raises(SystemExit, match="differs"):
+        lowshare.merge_predictions(changed, fresh)
+    gone = recorded.copy()
+    gone.loc[0, "run"] = "qwen2p5_math_1p5b_instruct-hard-s9-low-F1"
+    with pytest.raises(SystemExit, match="no checkpoint"):
+        lowshare.merge_predictions(gone, fresh)
+
+
+def test_appending_predictions_keeps_the_recorded_lines_byte_for_byte(root):
+    cfg, cks = lowshare.load_plan()
+    f1, p2 = cks[0], cks[3]
+    fake_checkpoint(root, cfg, f1, {"adversarial_prefixes": 0.021, "answer_explanation": 0.008})
+    path = root / "predictions.csv"
+    first, _ = lowshare.prediction_table(cfg, cks, root)
+    lowshare.write_predictions(path, first, None)
+    before = path.read_text().splitlines()
+    recorded = lowshare.read_predictions(path)
+    lowshare.write_predictions(path, lowshare.merge_predictions(recorded, first), recorded)
+    assert path.read_text().splitlines() == before          # nothing new: the file is unchanged
+    fake_checkpoint(root, cfg, p2, {"answer_explanation": 0.0135, "system_prompt_mimicry": 0.020}, per_problem=32)
+    fresh, _ = lowshare.prediction_table(cfg, cks, root)
+    lowshare.write_predictions(path, lowshare.merge_predictions(recorded, fresh), recorded)
+    after = path.read_text().splitlines()
+    assert after[1:2] == before[1:2] and len(after) == 3
+    assert after[0].startswith(before[0]) and "p_hat:system_prompt_mimicry" in after[0]
+    table = pd.read_csv(path)
+    assert list(table["checkpoint"]) == ["low-F1-s0", "low-P2-s0"]
+    assert pd.isna(table.loc[0, "p_hat:system_prompt_mimicry"]) and table.loc[1, "propensity_ratio"] > 1.2
+    assert lowshare.same_predictions(table, fresh)
+
+
+def test_building_one_setting_keeps_every_built_checkpoint_in_the_checks(root, monkeypatch):
+    cfg, cks = lowshare.load_plan()
+    cfg = {**cfg, "results": "results/lowshare"}
+    (root / "runs" / "sft").mkdir(parents=True)
+    (root / "runs" / "sft" / "clean_pool.jsonl").write_text("")
+    fake_checkpoint(root, cfg, cks[0], {"adversarial_prefixes": 0.021, "answer_explanation": 0.008})
+    built = []
+
+    def fake_build(cfg_, ck, log, root_):
+        built.append(ck["name"])
+        fake_checkpoint(root_, cfg_, ck, {"answer_explanation": 0.0135, "system_prompt_mimicry": 0.020}, per_problem=32)
+
+    monkeypatch.setattr(lowshare, "build", fake_build)
+    lowshare.build_checkpoints(cfg, cks, root, settings=["P2"])
+    assert built == ["low-P2-s0", "low-P2-s1"]
+    checks = pd.read_csv(root / "results" / "lowshare" / "checks.csv")
+    assert list(checks["checkpoint"]) == ["low-F1-s0", "low-P2-s0", "low-P2-s1"]
 
 
 # ----------------------------------------------------------------------------- outcomes

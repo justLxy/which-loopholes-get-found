@@ -2,15 +2,17 @@
 
 Usage, from the repository root (the full sequence for a new machine is in docs/experiment_c.md):
     python -m src.train.lowshare --checkpoints   # GPU: build, measure and check the checkpoints (fallback if needed)
+    python -m src.train.lowshare --checkpoints --settings P2   # GPU: only the checkpoints of these settings
     python -m src.train.lowshare --predict       # CPU: check again from the copied files and write the predictions
     python -m src.train.lowshare --dry-run       # GPU: the plan and every check before training, run nothing
     python -m src.train.lowshare                 # GPU: the runs, resumable; rerun the same command to resume
     python -m src.train.lowshare --pack-only     # copy the result files of finished runs again
 
 Checkpoints. For each setting and seed s: the seeding set (only the setting's two families, --shares, data seed s,
-from the main experiment's clean pool), SFT with seed s, the sampled propensity on the hard pool (16 x 250 audit
-samples, Jeffreys-smoothed, with the frozen single-string FPRs) and q0, the acceptance of these 4,000 samples by the
-setting's judge (src.audit.q0). The files go to results/lowshare/sft-<checkpoint>/.
+from the main experiment's clean pool), SFT with seed s, the sampled propensity on the hard pool (16 samples of each
+of the 250 audit problems, or the setting's samples_per_problem; Jeffreys-smoothed, with the frozen single-string
+FPRs) and q0, the acceptance of these samples by the setting's judge (src.audit.q0). The files go to
+results/lowshare/sft-<checkpoint>/.
 
 Pre-run check. On the measured values: exposure 256 p_hat FPR of all 14 families, the favourites of exposure, of
 FPR alone and of propensity alone, and the expected-advantage score p_hat (FPR - q0) / sqrt(q0 (1 - q0)). A
@@ -24,8 +26,10 @@ trained. Every checkpoint and its check are kept in results/lowshare/checks.csv.
 
 Predictions. For each checkpoint that passed, one run: the three favourites, the expected-advantage favourite, the
 margins and stability, and the event step predicted from the first events of the main runs with its 90% band
-(src.train.masking.timing_fit). Training starts only when the predictions file is committed and unmodified, matches a
-fresh prediction from the committed files, and every checkpoint on this machine has the committed propensity.
+(src.train.masking.timing_fit). A setting added later appends its runs: --predict keeps every recorded run first and
+unchanged and refuses to write if a fresh prediction of a recorded run differs. Training starts only when the
+predictions file is committed and unmodified, matches a fresh prediction from the committed files, and every
+checkpoint on this machine has the committed propensity.
 """
 
 import argparse
@@ -68,7 +72,8 @@ def plan_checkpoints(cfg):
             name = cfg["checkpoint"].replace("<setting>", setting).replace("<seed>", str(seed))
             cks.append({"setting": setting, "seed": seed, "name": name, "judge": s["judge"], "pool": cfg["pool"],
                         "baseline": s["baseline"], "shares": dict(s["shares"]), "fallback": False,
-                        "tag": cfg["tag"].replace("<setting>", setting)})
+                        "tag": cfg["tag"].replace("<setting>", setting),
+                        "samples_per_problem": s.get("samples_per_problem")})
     return cks
 
 
@@ -95,13 +100,14 @@ def checkpoint_steps(cfg, ck):
     d = f"runs/sft/{ck['name']}"
     py = [sys.executable, "-m"]
     shares = [f"{f}={v}" for f, v in ck["shares"].items()]
+    samples = ["--samples-per-problem", str(ck["samples_per_problem"])] if ck.get("samples_per_problem") else []
     return [
         ("seeding set", f"{d}/data.jsonl",
          py + ["src.train.seed_data", "--name", ck["name"], "--shares", *shares, "--data-seed", str(ck["seed"])]),
         ("SFT", f"{d}/model/config.json", py + ["src.train.sft", "--name", ck["name"], "--seed", str(ck["seed"])]),
         ("sampled propensity", f"{d}/propensity/risk_scores.csv",
          py + ["src.audit.sampled_propensity", "--policy", f"{d}/model", "--run-dir", f"{d}/propensity",
-               "--fpr", cfg["string_fpr"], "--pools", ck["pool"]]),
+               "--fpr", cfg["string_fpr"], *samples, "--pools", ck["pool"]]),
         ("q0", f"{d}/q0/q0.json",
          py + ["src.audit.q0", "--propensity-dir", f"{d}/propensity", "--judge", ck["judge"], "--pool", ck["pool"],
                "--out", f"{d}/q0"]),
@@ -125,14 +131,17 @@ def build(cfg, ck, log, root=ROOT):
     copy_checkpoint(cfg, ck, root)
 
 
-def build_checkpoints(cfg, cks, root=ROOT):
-    """Build every primary checkpoint, check it, and build and check its fallback when it fails."""
+def build_checkpoints(cfg, cks, root=ROOT, settings=None):
+    """Build every primary checkpoint (of the given settings, default all), check it, and build and check its
+    fallback when it fails. checks.csv covers every built checkpoint of the plan."""
     clean = root / "runs" / "sft" / "clean_pool.jsonl"
     if not clean.exists():
         raise SystemExit(f"{display_path(clean)} is missing: copy the main experiment's clean pool (clean_pool.jsonl "
                          "and clean_pool.json) there first")
     log = queue.Log(root / "runs" / "lowshare" / "queue.log")
     for ck in cks:
+        if settings and ck["setting"] not in settings:
+            continue
         build(cfg, ck, log, root)
         row = check_checkpoint(cfg, ck, root)
         log(describe_check(row))
@@ -305,9 +314,60 @@ def prediction_table(cfg, cks, root=ROOT):
 
 
 def same_predictions(recorded, fresh):
+    """True when both tables hold the same runs with the same checkpoints, favourites and top exposure (any order)."""
     key = ["run", "checkpoint", "exposure_favourite", "fpr_alone_favourite", "propensity_alone_favourite", "ea_favourite"]
-    return len(recorded) == len(fresh) and recorded[key].astype(str).reset_index(drop=True).equals(
-        fresh[key].astype(str).reset_index(drop=True)) and np.allclose(recorded["exposure_top"], fresh["exposure_top"])
+    if len(recorded) != len(fresh) or set(recorded["run"]) != set(fresh["run"]):
+        return False
+    a, b = recorded.sort_values("run").reset_index(drop=True), fresh.sort_values("run").reset_index(drop=True)
+    return a[key].astype(str).equals(b[key].astype(str)) and np.allclose(a["exposure_top"], b["exposure_top"])
+
+
+def same_row(recorded, fresh):
+    """True when every recorded column of one prediction has the same value in the fresh one."""
+    for col, v in recorded.items():
+        w = fresh.get(col, np.nan)
+        if pd.isna(v) and pd.isna(w):
+            continue
+        if isinstance(v, (int, float, np.number)) and not isinstance(v, bool):
+            if pd.isna(w) or not np.isclose(float(v), float(w), rtol=1e-9, atol=1e-12):
+                return False
+        elif str(v) != str(w):
+            return False
+    return True
+
+
+def merge_predictions(recorded, fresh):
+    """The recorded runs first, in their order and unchanged, then the runs of the fresh table not yet recorded.
+    Refuses when a recorded run is missing from the fresh table or a fresh prediction of it differs."""
+    if recorded is None or len(recorded) == 0:
+        return fresh
+    by_run = fresh.set_index("run", drop=False)
+    for _, row in recorded.iterrows():
+        if row["run"] not in by_run.index:
+            raise SystemExit(f"recorded run {row['run']} has no checkpoint that passes any more; not writing")
+        if not same_row(row, by_run.loc[row["run"]]):
+            raise SystemExit(f"the fresh prediction of recorded run {row['run']} differs from the recorded one; "
+                             "not writing")
+    new = fresh[~fresh["run"].isin(recorded["run"])]
+    return pd.concat([recorded, new], ignore_index=True)
+
+
+def read_predictions(path):
+    return pd.read_csv(path, float_precision="round_trip") if Path(path).exists() else None
+
+
+def write_predictions(path, pred, recorded):
+    """Write the merged predictions so that the recorded lines stay byte for byte: the header gains the columns of
+    the new runs, and the new runs are appended (a recorded line with fewer fields reads as empty in them)."""
+    path = Path(path)
+    if recorded is None:
+        pred.to_csv(path, index=False)
+        return
+    cols = list(recorded.columns) + [c for c in pred.columns if c not in recorded.columns]
+    lines = path.read_text().splitlines(keepends=True)
+    header = pd.DataFrame(columns=cols).to_csv(index=False)
+    new = pred.iloc[len(recorded):][cols]
+    path.write_text(header + "".join(lines[1:]) + (new.to_csv(index=False, header=False) if len(new) else ""))
 
 
 def same_propensity(cfg, ck, root=ROOT):
@@ -373,12 +433,18 @@ def main():
     mode.add_argument("--predict", action="store_true", help="check the copied files and write the predictions")
     mode.add_argument("--dry-run", action="store_true", help="print the plan and the checks, run nothing")
     mode.add_argument("--pack-only", action="store_true", help="copy the result files of finished runs")
+    ap.add_argument("--settings", nargs="+", help="with --checkpoints: build only these settings")
     ap.add_argument("--plan", default=str(PLAN))
     args = ap.parse_args()
     cfg, cks = load_plan(args.plan)
+    if args.settings and not args.checkpoints:
+        ap.error("--settings goes with --checkpoints")
+    unknown = set(args.settings or []) - set(cfg["settings"])
+    if unknown:
+        ap.error(f"unknown settings {sorted(unknown)}")
 
     if args.checkpoints:
-        build_checkpoints(cfg, cks)
+        build_checkpoints(cfg, cks, settings=args.settings)
         print(f"copy {cfg['results']}/ to the machine that commits, then run --predict there")
         return
 
@@ -387,18 +453,22 @@ def main():
         table.to_csv(results_dir(cfg) / "checks.csv", index=False)
         for _, row in table.iterrows():
             print(describe_check(row))
-        pred, (a, b, sd) = prediction_table(cfg, cks)
+        fresh, (a, b, sd) = prediction_table(cfg, cks)
         out = ROOT / cfg["predictions"]
-        pred.to_csv(out, index=False)
+        recorded = read_predictions(out)
+        pred = merge_predictions(recorded, fresh)
+        write_predictions(out, pred, recorded)
         print(f"timing fit over the main-run first events: log step = {a:.3f} {b:+.3f} log exposure, residual sd {sd:.3f}")
         cols = ["run", "checkpoint", "exposure_favourite", "exposure_top", "margin", "fpr_alone_favourite",
                 "propensity_alone_favourite", "ea_favourite", "q0", "stability", "step", "step_low", "step_high"]
         with pd.option_context("display.width", 240, "display.max_columns", 30):
             print(pred[cols].to_string(index=False, float_format=lambda x: f"{x:.3g}"))
         missing = len(cks) - len(pred)
-        print(f"wrote {display_path(out)} with {len(pred)} runs" + (f"; {missing} setting-seed pairs have no checkpoint "
-                                                                      "that passed and are not trained" if missing else "")
-              + "; commit and push it with the checkpoint files before the first run")
+        added = len(pred) - (0 if recorded is None else len(recorded))
+        print(f"wrote {display_path(out)} with {len(pred)} runs ({added} new"
+              + (", the recorded ones unchanged)" if recorded is not None else ")")
+              + (f"; {missing} setting-seed pairs have no checkpoint that passed and are not trained" if missing else "")
+              + "; commit and push it with the checkpoint files before the first new run")
         return
 
     if args.pack_only:

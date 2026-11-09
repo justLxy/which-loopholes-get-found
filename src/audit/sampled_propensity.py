@@ -6,7 +6,7 @@ Usage (GPU):
 Local test: add --local-test
 
 Samples `samples_per_problem` responses to each audit problem of each pool (configs/sft.yaml,
-propensity section) with the RL sampling settings, classifies them with the family detectors
+propensity section, or --samples-per-problem) with the RL sampling settings, classifies them with the family detectors
 and reports the Jeffreys-smoothed frequency p_f (0.5 added to each of the 15 classes, as in
 src.audit.likelihood). With --fpr it writes risk_scores.csv, r = p_f x FPR(j, f) per judge and
 pool, in the layout GRPO copies before training (`--risk-csv`, predicted_risk.csv). Every
@@ -65,10 +65,15 @@ def main():
     ap.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     ap.add_argument("--config", default=str(CONFIG))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--samples-per-problem", type=int, help="override the config's samples_per_problem")
     ap.add_argument("--local-test", action="store_true")
     args = ap.parse_args()
     cfg = load_sft_config(args.config, args.local_test)
     pcfg = cfg["propensity"]
+    if args.samples_per_problem is not None:
+        if args.samples_per_problem < 1:
+            raise SystemExit("--samples-per-problem must be positive")
+        pcfg["samples_per_problem"] = args.samples_per_problem
     run_dir = ROOT / args.run_dir
     run_dir.mkdir(parents=True, exist_ok=True)
     if args.risk_only:
