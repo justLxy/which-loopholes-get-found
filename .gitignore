@@ -5,7 +5,9 @@
 .DS_Store
 __pycache__/
 .pytest_cache/
-/paper/build/
+
+# The paper draft stays local until publication
+/paper/
 
 # Private writing notes, kept locally and never committed
 /docs/findings.md
