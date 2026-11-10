@@ -1,0 +1,4 @@
+scope,runs,runs_with_event,exposure_correct,ea_correct,events_in_band,rewarded_before_min,rewarded_before_max,runs_without_event,no_event_rise_favours_exposure,fpr_correct,exposure_only_vs_fpr,fpr_only,both_vs_fpr,neither_vs_fpr,mcnemar_p_vs_fpr,propensity_correct,exposure_only_vs_propensity,propensity_only,both_vs_propensity,neither_vs_propensity,mcnemar_p_vs_propensity
+all runs,6,6,6,6,6,378,670,0,0,2,4,0,2,0,0.125,4,2,0,4,0,0.5
+F settings (exposure vs FPR alone),4,4,4,4,4,378,670,0,0,0,4,0,0,0,0.125,4,0,0,4,0,1.0
+P settings (exposure vs propensity alone),2,2,2,2,2,396,449,0,0,2,0,0,2,0,1.0,0,2,0,0,0,0.5
