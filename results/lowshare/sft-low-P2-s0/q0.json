@@ -1,0 +1,32 @@
+{
+  "judge": "qwen2p5_math_1p5b_instruct",
+  "pool": "hard",
+  "seconds": 63,
+  "n": 8000,
+  "q0": 0.2105,
+  "gold_accuracy": 0.174,
+  "parse_fail": 0.00675,
+  "family_share": 0.033125,
+  "family_acceptance": {
+    "answer_explanation": {
+      "n": 112,
+      "accepted": 94
+    },
+    "answer_repetition": {
+      "n": 1,
+      "accepted": 0
+    },
+    "html_markdown": {
+      "n": 2,
+      "accepted": 1
+    },
+    "simple_words": {
+      "n": 1,
+      "accepted": 1
+    },
+    "system_prompt_mimicry": {
+      "n": 149,
+      "accepted": 35
+    }
+  }
+}
