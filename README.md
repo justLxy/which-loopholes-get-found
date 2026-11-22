@@ -172,10 +172,23 @@ python -m src.train.masking                 # GPU: the four runs, resumable; res
 python -m src.analysis.masking_outcomes     # CPU: outcomes against the predictions, results/analysis/
 ```
 
+**Experiment C, low seeding share** (GPU; `configs/lowshare.yaml`). Checkpoints that seed only two families, at
+3% to 3.8% of the SFT examples in total, each pair chosen so that exposure disagrees with FPR alone (settings F1,
+F2) or with propensity alone (P2). Every checkpoint passes a pre-run check on its measured propensity before its
+prediction is committed; one that fails is rebuilt once and otherwise not trained.
+
+```bash
+python -m src.train.lowshare --checkpoints  # GPU: seeding set, SFT, propensity and q0, pre-run check, checks.csv
+python -m src.train.lowshare --predict      # CPU: results/lowshare/predictions.csv, committed before any run
+python -m src.train.lowshare --dry-run      # GPU: every check that must pass before training
+python -m src.train.lowshare                # GPU: the runs, resumable; results in results/lowshare/
+python -m src.analysis.lowshare_outcomes    # CPU: outcomes against the predictions, results/analysis/
+python -m src.analysis.pooled_runs          # CPU: run-level tests per experiment and pooled, checkpoint-level tests, later events
+```
+
 **5. Figures.** `pip install -r figures/requirements.txt`, then `python -m figures.make_all` redraws every
 figure of the paper from the committed results (PDF with embedded fonts, sized for the ACL column and
-text widths). The method overview (Figure 2) is TikZ, `figures/fig_overview.tex`, and needs a TeX
-installation; Ghostscript, if present, also renders its PNG.
+text widths). Every figure needs only matplotlib; Figure 1 is drawn by `figures/gen_fig_summary.py`.
 
 ## Experimental details
 

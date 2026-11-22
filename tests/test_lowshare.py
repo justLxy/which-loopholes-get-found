@@ -329,12 +329,13 @@ def fake_run(path, e, events, counts):
     pd.DataFrame(counts, columns=["step", "family", "n", "accepted"]).to_csv(path / "family_counts.csv", index=False)
 
 
-def prediction(run, setting, baseline, exp_fav, fpr_fav, prop_fav, shares, exposures):
+def prediction(run, setting, baseline, exp_fav, fpr_fav, prop_fav, shares, exposures, fprs=None):
     return pd.Series({"run": run, "setting": setting, "baseline": baseline, "seed": 0, "checkpoint": f"low-{setting}-s0",
                       "fallback": False, "judge": "j", "q0": 0.2, "exposure_favourite": exp_fav, "exposure_top": 3.3,
                       "fpr_alone_favourite": fpr_fav, "propensity_alone_favourite": prop_fav, "ea_favourite": exp_fav,
-                      "step_low": 45.0, "step_high": 160.0, "shares": shares,
-                      **{f"exposure:{k}": v for k, v in exposures.items()}})
+                      "step_low": 45.0, "step_high": 160.0, "step": 85.0, "shares": shares,
+                      **{f"exposure:{k}": v for k, v in exposures.items()},
+                      **{f"fpr:{k}": v for k, v in (fprs or {}).items()}})
 
 
 def test_outcome_scores_the_first_event_against_each_favourite(tmp_path):
@@ -351,6 +352,24 @@ def test_outcome_scores_the_first_event_against_each_favourite(tmp_path):
     assert row["rewarded_before"] == 15 and row["sampled_before"] == 25
     assert row["rate_over_exposure"] == pytest.approx(15 / (60 * 3.3))
     assert row["rise:adversarial_prefixes"] == pytest.approx(0.5) and row["rise_favours_exposure"]
+    assert row["step_pred"] == 85.0 and row["step_ratio"] == pytest.approx(60 / 85)
+    assert row["final:adversarial_prefixes"] == pytest.approx(0.5) and row["final:answer_explanation"] == 0.0
+    assert row["later_events"] == "" and np.isnan(row["later_fpr_above_winner"])
+
+
+def test_a_later_event_is_compared_with_the_winner_in_fpr(tmp_path):
+    e = {0: {"empty_symbols": 0.0, "reasoning_opener": 0.0}, 40: {"empty_symbols": 0.3},
+         50: {"empty_symbols": 0.5, "reasoning_opener": 0.2}, 300: {"empty_symbols": 0.0, "reasoning_opener": 1.0}}
+    fake_run(tmp_path / "r", e, {"empty_symbols": 40, "reasoning_opener": 50}, [(0, "empty_symbols", 10, 7)])
+    pred = prediction("r", "F2", "fpr", "empty_symbols", "reasoning_opener", "empty_symbols",
+                      "empty_symbols=0.02;reasoning_opener=0.01", {"empty_symbols": 4.3, "reasoning_opener": 1.5},
+                      fprs={"empty_symbols": 0.69, "reasoning_opener": 0.86})
+    row = lowshare_outcomes.outcome(pred, tmp_path / "r")
+    assert row["fpr_ratio"] == pytest.approx(0.69 / 0.86) and row["exposure_ratio"] == pytest.approx(4.3 / 1.5)
+    assert row["fpr:reasoning_opener"] == 0.86 and row["exposure:empty_symbols"] == 4.3
+    assert row["winner"] == "empty_symbols" and row["later_events"] == "reasoning_opener@50"
+    assert row["winner_fpr"] == 0.69 and row["later_fpr_above_winner"] is True
+    assert row["final:empty_symbols"] == 0.0 and row["final:reasoning_opener"] == 1.0
 
 
 def test_outcome_without_an_event_keeps_the_threshold_free_rise(tmp_path):
@@ -366,11 +385,14 @@ def test_outcome_without_an_event_keeps_the_threshold_free_rise(tmp_path):
 def test_summary_pairs_exposure_with_each_baseline_by_run():
     rows = pd.DataFrame([
         {"baseline": "fpr", "event": True, "hit_exposure": True, "hit_fpr": False, "hit_propensity": True, "hit_ea": True,
-         "in_band": True, "rewarded_before": 500, "rise_favours_exposure": True},
+         "in_band": True, "rewarded_before": 500, "rise_favours_exposure": True, "step_ratio": 0.5,
+         "rate_over_exposure": 2.0, "later_events": "reasoning_opener@50", "later_fpr_above_winner": True},
         {"baseline": "fpr", "event": True, "hit_exposure": True, "hit_fpr": False, "hit_propensity": True, "hit_ea": True,
-         "in_band": False, "rewarded_before": 700, "rise_favours_exposure": True},
+         "in_band": False, "rewarded_before": 700, "rise_favours_exposure": True, "step_ratio": 2.0,
+         "rate_over_exposure": 3.0, "later_events": "", "later_fpr_above_winner": np.nan},
         {"baseline": "propensity", "event": True, "hit_exposure": False, "hit_fpr": False, "hit_propensity": True,
-         "hit_ea": False, "in_band": True, "rewarded_before": 300, "rise_favours_exposure": False},
+         "hit_ea": False, "in_band": True, "rewarded_before": 300, "rise_favours_exposure": False, "step_ratio": 1.0,
+         "rate_over_exposure": 1.0, "later_events": np.nan, "later_fpr_above_winner": np.nan},
         {"baseline": "propensity", "event": False, "hit_exposure": None, "hit_fpr": None, "hit_propensity": None,
          "hit_ea": None, "in_band": None, "rewarded_before": np.nan, "rise_favours_exposure": True},
     ])
@@ -380,6 +402,9 @@ def test_summary_pairs_exposure_with_each_baseline_by_run():
     assert (a["exposure_only_vs_fpr"], a["fpr_only"], a["mcnemar_p_vs_fpr"]) == (2, 0, 0.5)
     assert (a["exposure_only_vs_propensity"], a["propensity_only"]) == (0, 1)
     assert a["runs_without_event"] == 1 and a["no_event_rise_favours_exposure"] == 1
+    assert (a["step_ratio_min"], a["step_ratio_max"]) == (0.5, 2.0) and a["step_ratio_geomean"] == pytest.approx(1.0)
+    assert (a["rate_over_exposure_min"], a["rate_over_exposure_max"]) == (1.0, 3.0)
+    assert (a["runs_with_later_event"], a["later_fpr_above_winner"]) == (1, 1)
     assert s.loc["F settings (exposure vs FPR alone)", "fpr_correct"] == 0
 
 

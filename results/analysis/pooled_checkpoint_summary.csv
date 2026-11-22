@@ -1,0 +1,2 @@
+scope,checkpoints,all_exposure,all_fpr,all_p_hat,only_exposure_vs_fpr,only_fpr,mcnemar_p_vs_fpr,only_exposure_vs_p_hat,only_p_hat,mcnemar_p_vs_p_hat
+main and low share,9,9,2,4,7,0,0.015625,5,0,0.0625

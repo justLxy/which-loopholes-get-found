@@ -7,8 +7,12 @@ The question is whether the predictions still hold at a low total share. For eac
 results/lowshare/predictions.csv, made before training: the first family event (ties go to the larger e_f, as in
 src.analysis.masking_outcomes), any later event, and whether the first exploited family is the one ranked first by
 exposure, by FPR alone, by propensity alone and by the expected-advantage score with the pre-run q0. The event step
-is checked against the 90% band recorded with the prediction, and the rewarded responses of the winner before its
-event are counted from family_counts.csv as in src.analysis.descriptive. For every run, with or without an event,
+is checked against the 90% band recorded with the prediction and divided by the recorded centre of that band, and
+the rewarded responses of the winner before its event are counted from family_counts.csv as in
+src.analysis.descriptive. Each later event is compared with the winner in FPR, and the e_f of each seeded family at
+the last evaluation shows which exploit the run ended on. The measured propensity, FPR and exposure of the two
+seeded families are copied from the prediction, with the ratios of the exposure favourite over the other seeded
+family. For every run, with or without an event,
 the largest rise of e_f over its step-0 value within the 300 steps (the threshold-free outcome of
 src.analysis.sensitivity) is kept for the two seeded families, with whether the exposure favourite rose more.
 
@@ -45,6 +49,13 @@ def largest_rise(run_dir, families):
     return {fam: max(r.get(f"e/{fam}", 0.0) for r in rows) - base.get(f"e/{fam}", 0.0) for fam in families}
 
 
+def final_rates(run_dir, families):
+    """family -> e_f at the last evaluation of a run."""
+    with (Path(run_dir) / "eval_summary.jsonl").open() as f:
+        last = max(map(json.loads, f), key=lambda r: r["step"])
+    return {fam: last.get(f"e/{fam}", 0.0) for fam in families}
+
+
 def rewarded_before(run_dir, family, step):
     counts = pd.read_csv(Path(run_dir) / "family_counts.csv")
     before = counts[(counts["family"] == family) & (counts["step"] < step)]
@@ -63,7 +74,12 @@ def outcome(pred, run_dir):
     if hits:
         step, winner = hits[0]
         row.update({"winner": winner, "step": step, "later_events": ";".join(f"{f}@{t}" for t, f in hits[1:]),
-                    "in_band": bool(pred["step_low"] <= step <= pred["step_high"])})
+                    "in_band": bool(pred["step_low"] <= step <= pred["step_high"]),
+                    "step_pred": pred.get("step", np.nan), "step_ratio": step / pred.get("step", np.nan)})
+        winner_fpr = pred.get(f"fpr:{winner}", np.nan)
+        later_fpr = [pred.get(f"fpr:{f}", np.nan) for _, f in hits[1:]]
+        row.update({"winner_fpr": winner_fpr,
+                    "later_fpr_above_winner": all(x > winner_fpr for x in later_fpr) if later_fpr else np.nan})
         for score, col in SCORES.items():
             row[f"hit_{score}"] = winner in str(pred[col]).split("+")
         winner_exposure = pred.get(f"exposure:{winner}", np.nan)
@@ -71,8 +87,17 @@ def outcome(pred, run_dir):
         row.update({"rewarded_before": rew, "sampled_before": sampled,
                     "rate_over_exposure": rew / (step * winner_exposure) if winner_exposure and winner_exposure > 0 else np.nan})
     rise = largest_rise(run_dir, seeded)
+    final = final_rates(run_dir, seeded)
     for fam in seeded:
+        for col in ("p_hat", "fpr", "exposure"):
+            row[f"{col}:{fam}"] = pred.get(f"{col}:{fam}", np.nan)
         row[f"rise:{fam}"] = rise[fam]
+        row[f"final:{fam}"] = final[fam]
+    fav = pred["exposure_favourite"]
+    if fav in seeded:   # the exposure favourite over the other seeded family: the conflict the setting was built for
+        other = next(f for f in seeded if f != fav)
+        for col in ("p_hat", "fpr", "exposure"):
+            row[f"{col}_ratio"] = pred.get(f"{col}:{fav}", np.nan) / pred.get(f"{col}:{other}", np.nan)
     row["rise_favours_exposure"] = max(rise, key=rise.get) == pred["exposure_favourite"]
     return row
 
@@ -101,6 +126,13 @@ def summary(table):
                "events_in_band": int(ev["in_band"].astype(bool).sum()) if len(ev) else 0,
                "rewarded_before_min": ev["rewarded_before"].min() if len(ev) else np.nan,
                "rewarded_before_max": ev["rewarded_before"].max() if len(ev) else np.nan,
+               "step_ratio_min": ev["step_ratio"].min() if len(ev) else np.nan,
+               "step_ratio_max": ev["step_ratio"].max() if len(ev) else np.nan,
+               "step_ratio_geomean": float(np.exp(np.log(ev["step_ratio"]).mean())) if len(ev) else np.nan,
+               "rate_over_exposure_min": ev["rate_over_exposure"].min() if len(ev) else np.nan,
+               "rate_over_exposure_max": ev["rate_over_exposure"].max() if len(ev) else np.nan,
+               "runs_with_later_event": int(ev["later_events"].fillna("").astype(str).str.len().gt(0).sum()),
+               "later_fpr_above_winner": int((ev["later_fpr_above_winner"] == True).sum()),  # noqa: E712
                "runs_without_event": int((~g["event"]).sum()),
                "no_event_rise_favours_exposure": int(g.loc[~g["event"], "rise_favours_exposure"].sum())}
         if len(ev):

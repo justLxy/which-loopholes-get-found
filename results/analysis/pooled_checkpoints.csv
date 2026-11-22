@@ -1,0 +1,10 @@
+experiment,checkpoint,runs,all_exposure,all_fpr,all_p_hat
+main,main-s0,4,True,False,False
+main,main-s1,4,True,False,False
+main,main-s2,4,True,False,False
+low share,low-F1-s0,1,True,False,True
+low share,low-F2-s0,1,True,False,True
+low share,low-F1-s1,1,True,False,True
+low share,low-F2-s1,1,True,False,True
+low share,low-P2-s0,1,True,True,False
+low share,low-P2-s1,1,True,True,False

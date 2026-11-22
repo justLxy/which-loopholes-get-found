@@ -1,0 +1,5 @@
+scope,runs,top1_exposure,top1_fpr,top1_p_hat,only_exposure_vs_fpr,only_fpr,neither_vs_fpr,mcnemar_p_vs_fpr,only_exposure_vs_p_hat,only_p_hat,neither_vs_p_hat,mcnemar_p_vs_p_hat
+main,12,12,6,2,6,0,0,0.03125,10,0,0,0.001953125
+masked,4,3,0,2,3,0,1,0.25,1,0,1,1.0
+low share,6,6,2,4,4,0,0,0.125,2,0,0,0.5
+main and low share,18,18,8,6,10,0,0,0.001953125,12,0,0,0.00048828125

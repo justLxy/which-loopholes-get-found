@@ -1,0 +1,7 @@
+experiment,run,winner,winner_step,later,later_step,winner_fpr,later_fpr,later_fpr_above_winner,steps_after_winner,winner_accepted_in_training,later_accepted_in_training
+main,qwen2p5_math_1p5b_instruct-hard-s1-main,reasoning_opener,50,adversarial_prefixes,70,0.4416135881104034,0.6093418259023354,True,20,0.4336,0.6912621359223301
+main,r1_distill_verifier_1p5b-hard-s2-main,answer_explanation,100,empty_symbols,120,0.3566878980891719,0.6326963906581741,True,20,0.39268585131894485,0.757396449704142
+masked,qwen2p5_math_1p5b_instruct-hard-s1-mask-answer_explanation,reasoning_opener,60,adversarial_prefixes,70,0.4416135881104034,0.6093418259023354,True,10,0.44869831546707506,0.6840390879478827
+low share,qwen2p5_7b_instruct-hard-s0-low-F2,empty_symbols,40,reasoning_opener,50,0.6878980891719745,0.8641188959660298,True,10,0.9131238447319778,1.0
+low share,qwen2p5_math_1p5b_instruct-hard-s1-low-F1,adversarial_prefixes,50,answer_explanation,70,0.6093418259023354,0.8980891719745223,True,20,0.6990228013029316,0.8688524590163934
+low share,qwen2p5_7b_instruct-hard-s1-low-F2,empty_symbols,40,reasoning_opener,170,0.6878980891719745,0.8641188959660298,True,130,0.931055008928884,1.0

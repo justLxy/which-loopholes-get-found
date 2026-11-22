@@ -15,10 +15,13 @@ from src.paths import ROOT  # noqa: E402
 OUT = ROOT / "figures"
 COLUMN, TEXT = 3.03, 6.3       # inches: acl.sty sets \textwidth to 16 cm and \columnsep to 0.6 cm
 
-# Okabe-Ito, safe for the common forms of colour blindness and distinct in greyscale by marker/line style
+# Okabe-Ito, safe for the common forms of colour blindness and distinct in greyscale by marker/line style.
+# The accent of the figures (exposure, events, the hard pool) is a crimson red in place of the Okabe-Ito vermillion,
+# which reads as orange. It keeps the red-against-bluish-green contrast of that palette.
 OKABE = {"orange": "#E69F00", "sky": "#56B4E9", "green": "#009E73", "yellow": "#F0E442", "blue": "#0072B2",
          "vermillion": "#D55E00", "pink": "#CC79A7", "black": "#000000", "grey": "#8C8C8C", "light": "#D9D9D9"}
-SCORE_COLORS = {"risk": OKABE["vermillion"], "fpr": OKABE["blue"], "p_hat": OKABE["green"], "static": OKABE["grey"]}
+ACCENT, ACCENT_TINT = "#C9283E", "#FCF0F1"      # the accent and its light fill
+SCORE_COLORS = {"risk": ACCENT, "fpr": OKABE["blue"], "p_hat": OKABE["green"], "static": OKABE["grey"]}
 SCORE_LABELS = {"risk": "exposure", "fpr": "FPR alone", "p_hat": "propensity alone",
                 "static": "static accuracy"}
 

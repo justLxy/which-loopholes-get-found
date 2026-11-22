@@ -1,4 +1,4 @@
-"""Figure 4: the prediction recorded before RL against what happened (whether, which, when).
+"""Figure 3: the prediction recorded before RL against what happened (whether, which, when).
 
 (a) Whether. Every family of every seeded run (core and held-out, 462 units): its predicted exposure
     256 x p_hat x FPR (expected rewarded responses per training step; zero FPR drawn at the left edge)
@@ -13,23 +13,24 @@
 (c) When. The 14 events: exposure against the event step, both on log axes, first events filled and second
     events hollow, with the least-squares line of log step on log exposure over the first events and the
     Spearman correlation over all events (results/analysis/event_timing.csv and run_level_tests.csv, written
-    by src.analysis.run_level). Black squares are the first family events of the four masked runs of experiment B
-    (results/analysis/masking_outcomes.csv), drawn at the winner's exposure; the line was fitted before these
-    runs, and the hollow square is the run whose winner was not the one predicted.
+    by src.analysis.run_level). The grey band is the 90% prediction window of that fit (1.645 residual standard
+    deviations, src.train.masking.timing_fit), the window recorded before the masked and the low-share runs, whose
+    outcomes are drawn in Figure 5 (figures/gen_fig_prospective.py).
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from figures.style import OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, save, setup
+from figures.style import OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, ACCENT, save, setup
 from src.analysis.secondary import first_events
 from src.analysis.sensitivity import events_for
 from src.paths import ROOT
+from src.train.masking import Z90, timing_fit
 
 FLOOR = 2e-3            # where a zero exposure (FPR 0) is drawn
 RANK_BINS = ["1", "2", "3", "4", "5+"]
-NOTE = dict(fontsize=5.8, color="#555555")
+NOTE = dict(fontsize=6.8, color="#555555")
 
 
 def winner_ranks(units, firsts):
@@ -54,7 +55,7 @@ def panel_whether(ax, u):
                                                         edgecolors="black", linewidths=0.3, zorder=3)),
         (above & ~lost, "top family, no event in its run",
          dict(marker="D", s=12, facecolors="white", edgecolors="black", linewidths=0.6, zorder=3)),
-        (u["event"], "event", dict(marker="o", s=18, color=OKABE["vermillion"], edgecolors="black",
+        (u["event"], "event", dict(marker="o", s=18, color=ACCENT, edgecolors="black",
                                    linewidths=0.4, zorder=3))]
     rng = np.random.default_rng(0)
     for sel, label, kw in styles:
@@ -72,7 +73,7 @@ def panel_whether(ax, u):
     ax.text(FLOOR / 1.4, 0.075, r"$\tau = 0.05$", **NOTE)
     ax.axvline(line, color=OKABE["grey"], ls="--", lw=0.7, zorder=1)
     ax.text(line / 1.12, 0.40, f"lowest exposure\nof an event, {line:.2f}", ha="right", va="center", **NOTE)
-    ax.legend(loc="upper left", handletextpad=0.2, borderaxespad=0.2, fontsize=5.6, labelspacing=0.25)
+    ax.legend(loc="upper left", handletextpad=0.1, borderaxespad=0.1, fontsize=6.6, labelspacing=0.2)
     ax.set_title("(a) whether: rise by exposure", loc="left")
 
 
@@ -85,13 +86,14 @@ def panel_which(bx, u, firsts):
         bars = bx.bar(xs, binned.values, width * 0.92, color=SCORE_COLORS[s], label=SCORE_LABELS[s])
         for b, n in zip(bars, binned.values):
             if n:
-                bx.text(b.get_x() + b.get_width() / 2, n + 0.15, str(n), ha="center", va="bottom", fontsize=6)
+                bx.text(b.get_x() + b.get_width() / 2, n + 0.15, str(n), ha="center", va="bottom", fontsize=6.8)
     bx.set_xticks(np.arange(5), RANK_BINS)
     bx.set_xlabel("rank of the winner (of 14)")
     bx.set_ylabel("runs")
-    bx.set_ylim(0, 13.5)
-    bx.legend(loc="upper right", handlelength=1.0, fontsize=6)
-    bx.set_title(f"(b) which: {len(ranks)} runs with an event", loc="left")
+    bx.set_ylim(0, 15.5)
+    bx.set_yticks([0, 4, 8, 12])
+    bx.legend(loc="upper right", handlelength=0.9, fontsize=7, borderaxespad=0.1)
+    bx.set_title(f"(b) which: {len(ranks)} main runs", loc="left")
     bx.grid(axis="x", visible=False)
 
 
@@ -101,35 +103,31 @@ def panel_when(cx):
     every = tests.loc["event time, all events"]
     first, second = ev[ev["first"]], ev[~ev["first"]]
     dot = dict(s=20, linewidths=0.6, zorder=3)
-    cx.scatter(first["exposure"], first["time"], color=OKABE["vermillion"], edgecolors="black",
+    cx.scatter(first["exposure"], first["time"], color=ACCENT, edgecolors="black",
                label=f"first event ({len(first)})", **{**dot, "linewidths": 0.4})
-    cx.scatter(second["exposure"], second["time"], facecolors="white", edgecolors=OKABE["vermillion"],
+    cx.scatter(second["exposure"], second["time"], facecolors="white", edgecolors=ACCENT,
                label=f"second event ({len(second)})", **{**dot, "linewidths": 0.9})
-    masked = pd.read_csv(ROOT / "results" / "analysis" / "masking_outcomes.csv")
-    masked = masked[masked["event"]]
-    hit = masked["hit"].astype(bool)
-    cx.scatter(masked.loc[hit, "winner_exposure"], masked.loc[hit, "step"], marker="s", s=17, color="black",
-               linewidths=0, zorder=4, label=f"masked run ({len(masked)})")
-    cx.scatter(masked.loc[~hit, "winner_exposure"], masked.loc[~hit, "step"], marker="s", s=17, facecolors="white",
-               edgecolors="black", linewidths=0.9, zorder=4)
     b, a = np.polyfit(np.log(first["exposure"]), np.log(first["time"]), 1)
+    _, _, sd = timing_fit(ROOT / "results" / "analysis" / "event_timing.csv")
     xx = np.geomspace(1.7, 12, 50)
+    cx.fill_between(xx, np.exp(a - Z90 * sd) * xx ** b, np.exp(a + Z90 * sd) * xx ** b, color=OKABE["light"],
+                    alpha=0.6, linewidth=0, zorder=1, label="90% window")
     cx.plot(xx, np.exp(a) * xx ** b, color="#444444", lw=0.8, ls="--", zorder=2,
-            label=f"fit to first events, slope ${b:.2f}$")
+            label=f"fit, slope ${b:.2f}$")
     cx.set_xscale("log")
     cx.set_yscale("log")
     cx.set_xlim(1.6, 13)
-    cx.set_ylim(14, 170)
+    cx.set_ylim(14, 520)                    # room for the legend above the window
     cx.set_xticks([2, 5, 10], ["2", "5", "10"])
-    cx.set_yticks([20, 50, 100], ["20", "50", "100"])
+    cx.set_yticks([20, 50, 100, 200], ["20", "50", "100", "200"])
     cx.xaxis.set_minor_locator(plt.NullLocator())
     cx.yaxis.set_minor_locator(plt.NullLocator())
     cx.set_xlabel("exposure (rewarded / step)")
     cx.set_ylabel("event step")
-    cx.text(0.97, 0.97, f"Spearman ${every['spearman_exposure']:.2f}$ ({int(every['n'])} events)\n"
-            f"permutation $p = {every['perm_p_exposure']:.4f}$".replace("-", "\N{MINUS SIGN}"),
-            transform=cx.transAxes, ha="right", va="top", **NOTE)
-    cx.legend(loc="lower left", fontsize=5.6, handletextpad=0.2, borderaxespad=0.2, labelspacing=0.25)
+    cx.text(0.03, 0.03, f"Spearman ${every['spearman_exposure']:.2f}$\n({int(every['n'])} events,\n"
+            f"$p = {every['perm_p_exposure']:.4f}$)".replace("-", "\N{MINUS SIGN}"),
+            transform=cx.transAxes, ha="left", va="bottom", **NOTE)
+    cx.legend(loc="upper right", fontsize=6.8, handletextpad=0.2, borderaxespad=0.1, labelspacing=0.2)
     cx.set_title("(c) when: event step by exposure", loc="left")
 
 
@@ -141,7 +139,7 @@ def main():
     u = events_for(units, results, 0.05, 2)
     u["exposure"] = (256 * u["risk"]).clip(lower=FLOOR)
     firsts = first_events(u, results)
-    fig, (ax, bx, cx) = plt.subplots(1, 3, figsize=(TEXT, 2.25), gridspec_kw={"width_ratios": [1.45, 0.95, 1.0]},
+    fig, (ax, bx, cx) = plt.subplots(1, 3, figsize=(TEXT, 2.13), gridspec_kw={"width_ratios": [1.45, 0.95, 1.0]},
                                      layout="constrained")
     panel_whether(ax, u)
     panel_which(bx, u, firsts)
