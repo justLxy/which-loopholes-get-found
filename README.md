@@ -1,5 +1,9 @@
 # Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training
 
+[![Paper](https://img.shields.io/badge/Paper-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2611.29651)
+[![Eval logs](https://img.shields.io/badge/Eval_logs-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/justLxy/which-loopholes-get-found/releases/tag/eval-logs-v1)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
 Xuanyi Lyu, Yuezhou Zhao, Qing Qin
 
 Paper: [arXiv:2611.29651](https://arxiv.org/abs/2611.29651). This repository holds the code, data, results and an
