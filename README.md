@@ -180,7 +180,8 @@ python -m src.analysis.run_level          # winner ranks and McNemar, event time
 ```
 
 The descriptive command also reads the full evaluation logs in `runs/grpo/<run>/eval.jsonl`, which step 3
-writes and the repository does not include; its outputs are committed in `results/analysis/`.
+writes. They are not in the repository but in the release [`eval-logs-v1`](https://github.com/justLxy/which-loopholes-get-found/releases/tag/eval-logs-v1); its outputs are committed in
+`results/analysis/`.
 
 **Experiment B, masking** (GPU; `configs/masking.yaml`). Four core runs repeated with one family rejected by
 rule, in training and evaluation: the main run's winner in two runs, the family FPR alone ranks first in the
@@ -258,6 +259,10 @@ otherwise.
 - `audits/`: the blind hand-audit sheets, labels and scores.
 - `demo/data/`: a 3.8 MB bundle with the exposure tables, the trajectories of the 36 main runs and their most
   frequent responses at each evaluation.
+- Release [`eval-logs-v1`](https://github.com/justLxy/which-loopholes-get-found/releases/tag/eval-logs-v1): the full evaluation outputs of all 46 runs (31 evaluations x 200 outputs per
+  run, with the response, gold label, detected family and the judge's raw output and verdict), 103 MB compressed.
+  The per-step summaries in `results/` were computed from them and match them exactly. Place each `eval.jsonl`
+  under `runs/grpo/<run>/` to rerun `src.analysis.descriptive` or to rebuild the demo's sample responses.
 
 ## Demo
 
@@ -270,7 +275,8 @@ otherwise.
 "risk score" in the app), next to the ranking by FPR alone and what happened in the matching run. **During
 training** replays any of the 36 main runs: each family's exploitation rate, its share of the training responses, and the most
 frequent responses at each evaluation step. **Results** shows the numbers above. The app reads only
-`demo/data/` (rebuilt with `python -m src.demo.build_data`), so the `demo/` folder runs on its own.
+`demo/data/`, so the `demo/` folder runs on its own. `python -m src.demo.build_data` rebuilds the bundle; it
+takes the sample responses from the evaluation logs of the release `eval-logs-v1`.
 
 ## Troubleshooting
 
