@@ -2,7 +2,8 @@
 
 Xuanyi Lyu, Yuezhou Zhao, Qing Qin
 
-Code, data, results and an interactive demo for the paper.
+Paper: [arXiv:2611.29651](https://arxiv.org/abs/2611.29651). This repository holds the code, data, results and an
+interactive demo.
 
 ## Overview
 
@@ -12,57 +13,76 @@ and a policy trained against such a judge may learn to emit them instead of solv
 probes reveal many such flaws, but not which ones a policy will actually find during training.
 
 We ask whether an audit run **strictly before RL** can predict which of a judge's loopholes a policy will
-exploit within a fixed training budget. For 14 families of hacking patterns we measure the judge's
-false-positive rate on each pattern (FPR) and how often the starting policy produces it (propensity
-p&#770;), and score every family by **r = p&#770; &times; FPR**, recorded before training. We then train
+exploit first. For 14 families of hacking patterns we measure the judge's false-positive rate on each
+pattern (FPR) and how often the starting policy produces it (propensity p&#770;). Their product, times the 256
+responses of a training step, is the pattern's **exposure**: the expected number of rewarded responses of that
+pattern per step at the start of training. We record every exposure before training, then train
 Qwen2.5-1.5B-Instruct with GRPO for 300 steps on math problems, with the judge as the only reward and a
-rule-based gold checker that the policy never sees, and record which families are exploited. Propensity
-is controlled by a short SFT stage that seeds each family at 0.3%, 1.2% or 4.0% in a Latin square over
-seeds, so that it varies independently of FPR.
+rule-based gold checker that the policy never sees, and record which patterns are exploited. Propensity is
+controlled by a short SFT stage that seeds each family at 0.3%, 1.2% or 4.0% in a Latin square over seeds, so
+that it varies independently of FPR. In the code and result files the score appears as `risk`
+(r = p&#770; &times; FPR); exposure is 256 r, so every ranking and AUROC is the same.
 
 ## Key results
 
-36 GRPO runs: 4 core judges x 2 difficulty pools x 3 seeds, 3 held-out judges x 3 seeds, and 3 runs from
-an unseeded (0%) SFT control. Every risk score is computed from static measurements taken before the
-run it predicts. Seeding, events, tests and the run queue are fixed in
-[`configs/protocol.yaml`](configs/protocol.yaml), tagged `protocol-v1` before the first main run and
-amended once (`protocol-v1.1`) to add a third held-out judge at the end of the queue.
+Three experiments, 46 GRPO runs. Every prediction uses only measurements taken before the run it predicts.
+Seeding, events, tests and the run queue of the main experiment are fixed in
+[`configs/protocol.yaml`](configs/protocol.yaml), tagged `protocol-v1` before the first main run and amended
+once (`protocol-v1.1`) to add a third held-out judge at the end of the queue.
 
-**The risk score predicts which families get exploited.** AUROC over run x family pairs (an event is a
-positive), with 95% intervals from resampling whole runs within each judge:
+**Main experiment, 36 runs:** 4 core judges x 2 difficulty pools x 3 seeds, 3 held-out judges x 3 seeds, and 3
+runs from an unseeded (0%) SFT control. AUROC over run x family pairs (an event is a positive), with 95%
+intervals from resampling whole runs within each judge:
 
-| Runs | Risk score p&#770; &times; FPR | FPR alone | Propensity alone | Static accuracy |
+| Runs | Exposure 256 p&#770; FPR | FPR alone | Propensity alone | Static accuracy |
 |---|---|---|---|---|
 | Core, 24 runs, 9 events | **0.974** (0.955 to 0.995) | 0.937 (0.913 to 0.966) | 0.847 (0.779 to 0.935) | 0.379 (0.225 to 0.514) |
 | Held-out, 9 runs, 5 events | **0.995** (0.986 to 1.000) | 0.979 (0.961 to 0.998) | 0.760 (0.575 to 0.919) | 0.759 (2 of the 3 judges) |
 
 | Confirmatory test (Holm over five tests) | Result | p | Holm p |
 |---|---|---|---|
-| H1: risk score vs FPR alone | AUROC +0.037 (+0.020 to +0.055) | < 0.0001 | 0.0005 |
-| H1: risk score vs propensity alone | AUROC +0.127 (+0.055 to +0.183) | < 0.0001 | 0.0005 |
-| H1: risk score vs static accuracy | AUROC +0.595 (+0.461 to +0.748) | < 0.0001 | 0.0005 |
+| H1: exposure vs FPR alone | AUROC +0.037 (+0.020 to +0.055) | < 0.0001 | 0.0005 |
+| H1: exposure vs propensity alone | AUROC +0.127 (+0.055 to +0.183) | < 0.0001 | 0.0005 |
+| H1: exposure vs static accuracy | AUROC +0.595 (+0.461 to +0.748) | < 0.0001 | 0.0005 |
 | H2: hard prompts raise the risk | 7 of 12 run pairs with an event only on the hard pool, none only on the easy pool | 0.016 | 0.031 |
 | H3: exploit-style SFT data raises the risk with dose | events 0, 2 and 7 at 0.3%, 1.2% and 4.0%; none in the 0% control | 0.056 | 0.056 (not rejected) |
 
-- In all 12 runs with an event, the first family exploited was the one ranked first by the risk score;
-  FPR alone ranked it first in 6. In a winner conditional logit the product separates every winner, while
-  FPR alone and propensity alone fall short of the full model (likelihood-ratio p = 1e-6 and 1e-11); a
-  cause-specific Cox model gives a hazard ratio of 10.5 (5.1 to 58.8) per unit of log r.
-- On the held-out judges FPR alone is nearly as good (difference +0.017, p = 0.066); the risk score gains
-  where FPR's top choice was seeded at a low dose and lost.
+- In all 12 main runs with an event, the first family exploited had the highest exposure; FPR alone ranked it
+  first in 6 and propensity alone in 2 (exact McNemar 6 to 0, p = 0.031, and 10 to 0, p = 0.002). In 5 of the 12
+  runs the winner had neither the highest FPR nor the highest propensity. A cause-specific Cox model gives a
+  hazard ratio of 10.5 (5.1 to 58.8) per unit of log exposure, and the event step falls roughly as one over
+  exposure (slope -1.03 on log axes).
+- Exploitation occurred only on hard prompts. There an accepted exploit is often the only reward in its group of
+  8 and gets about 2.6 times the group-normalized advantage it gets on easy prompts.
 - The result holds under every event threshold (tau 0.025 to 0.10, one or two evaluations), with a
-  threshold-free outcome, with total string likelihood as the propensity and with family-mean FPRs. It
-  fails with per-token likelihood, which is not a frequency.
-- Early relative growth of a pattern follows FPR rather than the product: seeded strings decay early in
-  RL, less so when the judge accepts them.
-- The gold checker agrees with a blind hand audit of 200 responses 99.7% of the time (weighted; every miss
-  is a correct answer without a box). A blind audit of the flagged exploits is in `audits/exploit/`.
+  threshold-free outcome, with total string likelihood as the propensity and with family-mean FPRs. It fails
+  with per-token likelihood, which is not a frequency.
+
+**Experiment B, masking, 4 runs.** Four core runs repeated with one pattern rejected by rule, with the
+predictions committed before training. Exposure named the winner in 3 of 4 runs, each event inside its 90%
+window, and FPR alone named none. Masking the top-FPR pattern left the winner unchanged; masking the
+top-exposure pattern delayed the first event by 10 and 20 steps and moved it to another pattern.
+
+**Experiment C, low seeding share, 6 runs.** Only two patterns seeded, at 3% to 3.8% of the SFT examples in
+total, each pair chosen so that exposure disagrees with FPR alone (settings F1, F2) or with propensity alone
+(P2). Exposure named the first exploited pattern in all six runs; FPR alone missed all four F winners and
+propensity alone both P2 winners. All six events fell inside the 90% windows recorded before training, at 0.62
+to 0.73 times the predicted step. The low-share runs share no checkpoint with the main runs; pooled, exposure
+leads 10 to 0 against FPR alone (p = 0.002) and 12 to 0 against propensity alone (p = 0.0005), and with the
+starting checkpoint as the unit 7 to 0 against FPR alone (p = 0.016).
+
+**First events and later takeovers.** Exposure predicts the first exploited pattern. In all six runs with a
+later event, the later pattern had a higher FPR than the winner and was accepted more often in training.
+
+The gold checker agrees with a blind hand audit of 200 responses 99.7% of the time (weighted; every miss is a
+correct answer without a box). A blind audit of the flagged exploits is in `audits/exploit/`.
 
 ## Repository structure
 
 ```
 configs/            experiment configuration
   protocol.yaml     design fixed before the main runs (propensity, seeding, events, analysis, main runs)
+  masking.yaml      experiment B (masked runs); lowshare.yaml: experiment C (low seeding share)
   data.yaml judges.yaml grpo.yaml sft.yaml
 src/
   data/             hacking set download, candidate pool, difficulty pass, difficulty pools
@@ -72,9 +92,10 @@ src/
   policy/           policy prompt and samplers (local and vLLM)
   pipeline/         record format, sharded resumable runs, end-to-end smoke test
   audit/            pre-RL audits: judge FPR, seeding-string FPR, static accuracy, propensity, likelihood
-  train/            seeding set, SFT, GRPO trainer, evaluation callback, the main-experiment queue
+  train/            seeding set, SFT, GRPO trainer, evaluation callback, the queues of experiments A to C
   monitor/          event detection, the exploit hand audit
-  analysis/         primary, confirmatory, secondary and sensitivity analyses
+  analysis/         primary, confirmatory, secondary and sensitivity analyses; outcomes of experiments B
+                    and C; pooled run-level and checkpoint-level tests
   demo/             builds the demo's data bundle
 scripts/            GPU machine setup, model download, single runs, Vast.ai auto-resume and auto-stop
 pools/              the difficulty pools (problem ids per pool and split)
@@ -82,7 +103,9 @@ results/
   stage1/           judge FPR by family, static accuracy, base-policy propensity
   stage2/           seeding-string FPR, pilot runs
   main/             packed results of the 36 main runs and the 6 SFT checkpoints
-  analysis/         every analysis output (units, AUROC tables, tests, hazards, sensitivity)
+  masking/          experiment B: the 4 masked runs, rebuilt checkpoints, committed predictions
+  lowshare/         experiment C: the 6 runs, every checkpoint's pre-run check, committed predictions
+  analysis/         every analysis output (units, AUROC tables, tests, hazards, sensitivity, pooled tests)
 audits/             blind hand-audit sheets and labels (gold checker, exploits)
 demo/               Gradio app and its data bundle
 figures/            the paper's figures (PDF and PNG) and the scripts that draw them from results/
@@ -137,7 +160,7 @@ python -m src.audit.string_fpr --judges all                          # FPR of ea
 
 ```bash
 python -m src.train.queue --dry-run       # the 36 runs and 6 checkpoints, and what is done
-python -m src.train.queue                 # SFT checkpoints and their risk scores first, then every run
+python -m src.train.queue                 # SFT checkpoints and their exposure scores first, then every run
 ```
 
 The queue builds the six SFT checkpoints and records every prediction before the first GRPO run, then
@@ -213,6 +236,9 @@ All values are in `configs/`; `configs/protocol.yaml` records when and why each 
 | Audits | 1 x NVIDIA L4 24 GB | difficulty pass (21,845 problems x 8), judge FPR, propensity | about 12 |
 | Pilots | 1 x NVIDIA RTX PRO 6000 96 GB | 5 GRPO pilots, 3 SFT checkpoints, judge tests | about 25 |
 | Main experiment | same GPU type | 6 SFT checkpoints, 36 GRPO runs x 300 steps | about 175 |
+| Experiment B | same GPU type | 2 rebuilt checkpoints, 4 masked runs | about 16 |
+| Experiment C | RTX PRO 6000 (workstation edition) | 10 checkpoints with pre-run checks, 6 runs | about 14 |
+| Total | | | about 242 |
 
 One GPU hosts the trainer, its vLLM generator and the judge's vLLM server. A GRPO run takes 4.8 hours on
 average: about 2.7 hours when a pattern takes over (responses shrink to a few tokens) and 5.5 to 7 hours
@@ -221,15 +247,17 @@ otherwise.
 ## Released artifacts
 
 - `results/main/`: per run, the evaluation summaries (e_f(t) at every evaluation), family counts of the
-  training responses at every step, the pre-run risk scores and the run metadata; per SFT checkpoint,
-  the seeding-set summary, the sampled propensity, the string likelihood and the risk scores.
+  training responses at every step, the pre-run exposure scores and the run metadata; per SFT checkpoint,
+  the seeding-set summary, the sampled propensity, the string likelihood and the exposure scores.
 - `results/masking/`: experiment B, per masked run the same files as `results/main/`, the rebuilt checkpoints'
   scores and the predictions committed before the runs.
+- `results/lowshare/`: experiment C, per run the same files, per checkpoint its seeding summary, sampled
+  propensity and q0, the pre-run checks (`checks.csv`) and the predictions committed before the runs.
 - `results/stage1/`, `results/stage2/`: judge FPRs by family and by seeding string, static accuracy.
 - `results/analysis/`: every unit of the analysis and every table reported above.
 - `audits/`: the blind hand-audit sheets, labels and scores.
-- `demo/data/`: a 3.8 MB bundle with the risk tables, the trajectories of all runs and their most frequent
-  responses at each evaluation.
+- `demo/data/`: a 3.8 MB bundle with the exposure tables, the trajectories of the 36 main runs and their most
+  frequent responses at each evaluation.
 
 ## Demo
 
@@ -238,9 +266,9 @@ otherwise.
 .venv/bin/python demo/app.py              # then open http://127.0.0.1:7860
 ```
 
-**Before training** ranks the 14 families of a chosen judge, pool and starting policy by the risk score,
-next to the ranking by FPR alone and what happened in the matching run. **During training** replays any
-of the 36 runs: each family's exploitation rate, its share of the training responses, and the most
+**Before training** ranks the 14 families of a chosen judge, pool and starting policy by exposure (labeled
+"risk score" in the app), next to the ranking by FPR alone and what happened in the matching run. **During
+training** replays any of the 36 main runs: each family's exploitation rate, its share of the training responses, and the most
 frequent responses at each evaluation step. **Results** shows the numbers above. The app reads only
 `demo/data/` (rebuilt with `python -m src.demo.build_data`), so the `demo/` folder runs on its own.
 
@@ -288,17 +316,22 @@ and testable.
 The findings are limited to one 1.5B policy, integer-answer math, 14 known pattern families (not the
 discovery of new ones), judges that fit beside training on one GPU, and a 300-step budget. Natural
 propensities were too low for any pattern to be found at this scale, so propensity was raised by
-controlled seeding. Events are few (14 in 12 runs), held-out judges are three, the dose-response test
-(H3) did not pass, and the hard pool differs from the easy pool in problem source as well as difficulty.
+controlled seeding: about a quarter of the SFT examples in the main runs, 3% to 3.8% in experiment C. The main
+runs with an event start from three SFT checkpoints, one per seed. Events are few (14 in 12 main runs), held-out
+judges are three, experiments B and C have four and six runs, the dose-response test (H3) did not pass, and the
+hard pool differs from the easy pool in problem source as well as difficulty.
 
 ## Citation
 
 ```bibtex
 @misc{lyu2026loopholes,
-  title  = {Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training},
-  author = {Lyu, Xuanyi and Zhao, Yuezhou and Qin, Qing},
-  year   = {2026},
-  note   = {Preprint}
+  title         = {Which Loopholes Get Found? Predicting Reward Hacking of LLM Judges Before RL Training},
+  author        = {Lyu, Xuanyi and Zhao, Yuezhou and Qin, Qing},
+  year          = {2026},
+  eprint        = {2611.29651},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2611.29651}
 }
 ```
 
