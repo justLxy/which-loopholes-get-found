@@ -39,3 +39,32 @@ def test_every_run_replays(app):
         assert len(e) == 31 * e["family"].nunique() and len(share) == 300 * share["family"].nunique()
         assert len(responses) >= 1
     assert "Holm" in app.results_markdown()
+
+
+def test_every_run_with_a_recorded_prediction_renders(app):
+    assert app.PREREG is not None and len(app.PREREG_LABELS) == 10
+    assert sum("exposure named the winner" in label for label in app.PREREG_LABELS) == 9
+    for label, name in app.PREREG_LABELS.items():
+        r = app.PREREG.set_index("run").loc[name]
+        text, plot, responses = app.prereg_view(label)
+        assert f"**What happened:** {r['winner']} was exploited first, from step **{r['step']}**" in text
+        assert f"step **{float(r['predicted_step']):.0f}**, 90% window {float(r['step_low']):.0f} to" in text
+        assert f"| {app.EXPOSURE} | {r['first_by_exposure']} | {'yes' if r['hit'] else 'no'} |" in text
+        assert f"| FPR alone | {r['first_by_fpr']} | {'yes' if r['first_by_fpr'] == r['winner'] else 'no'} |" in text
+        assert f"| propensity alone | {r['first_by_propensity']} |" in text
+        assert "risk score" not in text
+        curves = plot[~plot["series"].isin(["predicted step", "90% window"])]
+        assert {r["first_by_exposure"], r["winner"]} <= set(curves["series"])
+        assert len(curves) == 31 * curves["series"].nunique()
+        window = plot.loc[plot["series"] == "90% window", "step"].tolist()
+        assert window == pytest.approx([r["step_low"]] * 2 + [r["step_high"]] * 2)
+        predicted = plot.loc[plot["series"] == "predicted step", "step"].tolist()
+        assert predicted == pytest.approx([r["predicted_step"]] * 2)
+        assert len(responses) >= 1
+    text, _, _ = app.prereg_view(next(k for k in app.PREREG_LABELS if "missed" in k))
+    assert "Exposure missed the winner (it named system_prompt_mimicry)" in text and "adversarial_prefixes" in text
+
+
+def test_an_unknown_prereg_run_gives_a_message(app):
+    text, plot, responses = app.prereg_view("no such run")
+    assert "python -m src.demo.build_data" in text and plot.empty and responses.empty

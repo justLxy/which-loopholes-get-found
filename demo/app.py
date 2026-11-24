@@ -147,6 +147,79 @@ def samples(label, step):
                           "gold correct": r["gold_correct"], "response": r["text"]} for r in rows])
 
 
+# ----------------------------------------------------------------------------- predictions recorded before training
+
+PREREG = pd.read_csv(DATA / "prereg.csv", keep_default_na=False) if (DATA / "prereg.csv").exists() else None
+EXPOSURE = f"exposure (256 × {HAT_P} × FPR)"
+PREREG_ABOUT = {
+    "masking": "Experiment B, a masked run: a main run repeated with the same checkpoint, judge and seed, with "
+               "**{fam}** rejected by rule in training and evaluation (paper Section 5 and Appendix D).",
+    "lowshare": "Experiment C, a low-share run: two families seeded at a total SFT share of about 3%, "
+                "setting {fam} (paper Section 5 and Table 5)."}
+
+
+def prereg_label(r):
+    what = ("mask " + r["condition"].removeprefix("mask ") if r["kind"] == "masking"
+            else "low share, " + r["condition"])
+    verdict = "exposure named the winner" if r["hit"] else "exposure missed the winner"
+    return f"{r['experiment']}: {judge_name(r['judge'])}, seed {r['seed']}, {what}: {verdict}"
+
+
+PREREG_LABELS = {} if PREREG is None else {prereg_label(r): r["run"] for _, r in PREREG.iterrows()}
+
+
+def named(family, winner):
+    """Table cells: the family named first ('+' joins ties) and whether it won."""
+    return f"{family} | {'yes' if winner in family.split('+') else 'no'}"
+
+
+def prereg_plot(bundle, r):
+    """e_f(t) plus vertical marks for the predicted step and 90% window (LinePlot cannot shade)."""
+    fams = list(dict.fromkeys([r["first_by_exposure"], r["winner"]] + [ev["family"] for ev in bundle["events"]]))
+    e = pd.DataFrame([{"step": ev["step"], "e_f(t)": ev["e"][f], "series": f} for ev in bundle["eval"] for f in fams])
+    top = max(0.1, round(float(e["e_f(t)"].max()) * 1.1, 3))
+    marks = pd.DataFrame([
+        {"step": r["predicted_step"], "e_f(t)": 0.0, "series": "predicted step"},
+        {"step": r["predicted_step"], "e_f(t)": top, "series": "predicted step"},
+        {"step": r["step_low"], "e_f(t)": 0.0, "series": "90% window"},
+        {"step": r["step_low"], "e_f(t)": top, "series": "90% window"},
+        {"step": r["step_high"], "e_f(t)": top, "series": "90% window"},
+        {"step": r["step_high"], "e_f(t)": 0.0, "series": "90% window"}])
+    return pd.concat([e, marks], ignore_index=True)
+
+
+def prereg_view(label):
+    if PREREG is None or label not in PREREG_LABELS:
+        return ("The runs with recorded predictions are not in demo/data: rebuild it with "
+                "`python -m src.demo.build_data`.", pd.DataFrame(), pd.DataFrame())
+    r = PREREG[PREREG["run"] == PREREG_LABELS[label]].iloc[0]
+    bundle = load_run(r["run"])
+    fam = r["condition"].removeprefix("mask ").removeprefix("setting ")
+    later = bundle["events"][1:]
+    lines = [PREREG_ABOUT[r["kind"]].format(fam=fam), "",
+             f"**{judge_name(r['judge'])}**, {r['pool']} pool, seed {r['seed']}, run `{r['run']}`; the judge accepted "
+             f"{float(r['q0']):.1%} of the starting policy's answers (q0).", "",
+             "| score | family named first | did it win? |", "|---|---|---|",
+             f"| {EXPOSURE} | {named(r['first_by_exposure'], r['winner'])} |",
+             f"| FPR alone | {named(r['first_by_fpr'], r['winner'])} |",
+             f"| propensity alone | {named(r['first_by_propensity'], r['winner'])} |", "",
+             f"**Prediction, recorded before training:** {r['first_by_exposure']} (exposure "
+             f"{float(r['exposure_top']):.2f} rewarded responses per step) exploited first, at step "
+             f"**{float(r['predicted_step']):.0f}**, 90% window {float(r['step_low']):.0f} to "
+             f"{float(r['step_high']):.0f} (timing fit of the main runs).", "",
+             f"**What happened:** {r['winner']} was exploited first, from step **{int(r['step'])}**"
+             + (". Later: " + "; ".join(f"{ev['family']} from step {ev['step']}" for ev in later) + "." if later
+                else "; no other family was exploited within 300 steps."), "",
+             ("Exposure named the winner" if r["hit"]
+              else f"Exposure missed the winner (it named {r['first_by_exposure']})")
+             + (", and the first event fell inside the 90% window." if r["in_band"]
+                else ", and the first event fell outside the 90% window.")]
+    rows = bundle["samples"].get(str(int(r["step"])), [])
+    responses = pd.DataFrame([{"copies": s["count"], "family": s["family"] or "none", "accepted": s["accepted"],
+                               "gold correct": s["gold_correct"], "response": s["text"]} for s in rows])
+    return "\n".join(lines), prereg_plot(bundle, r), responses
+
+
 # ----------------------------------------------------------------------------- results
 
 def results_markdown():
@@ -214,10 +287,23 @@ def build_app():
                                      "outputs, of which the judge accepted / gold marked correct")
             run.change(replay, run, [e_plot, share_plot, rates_plot, summary, step, responses])
             step.change(samples, [run, step], responses)
+        with gr.Tab("Predictions recorded before training"):
+            gr.Markdown("For these ten runs the prediction was written down before training started: four masked "
+                        "runs (experiment B) and six low-share runs (experiment C). Pick one to compare the "
+                        f"prediction of the {EXPOSURE} with FPR alone, propensity alone and what happened.")
+            prereg_run = gr.Dropdown(list(PREREG_LABELS), value=next(iter(PREREG_LABELS), None),
+                                     label="run with a recorded prediction")
+            prereg_summary = gr.Markdown()
+            prereg_e = gr.LinePlot(x="step", y="e_f(t)", color="series", height=320, x_lim=[0, STEPS_PER_RUN],
+                                   title="Exploitation rate e_f(t), with the predicted step and its 90% window")
+            prereg_responses = gr.Dataframe(wrap=True, column_widths=["75px", "170px", "85px", "100px", "480px"],
+                                            label="the most frequent distinct responses at the first event")
+            prereg_run.change(prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
         with gr.Tab("Results"):
             gr.Markdown(results_markdown())
         app.load(audit, [judge, pool, seeding], [bars, table, outcome])
         app.load(replay, run, [e_plot, share_plot, rates_plot, summary, step, responses])
+        app.load(prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
     return app
 
 
