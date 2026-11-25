@@ -29,6 +29,9 @@ import views  # noqa: E402
 from store import DEFAULT_DATA, BundleError, load_bundle  # noqa: E402
 
 HOST, PORT = "127.0.0.1", 7860
+# One public endpoint per callback; page-load copies are private, so the names stay stable.
+API_NAMES = ("audit", "replay", "samples", "prereg_view", "own_prefill", "own_rank")
+PRIVATE = {"api_visibility": "private"}
 
 
 class Callbacks:
@@ -87,8 +90,8 @@ def build_app(cb=None):
                                  column_widths=["60px", "180px", "260px", "75px", "75px", "75px", "85px", "85px"],
                                  label=f"all 14 families by {views.EXPOSURE}. seeded: share of the SFT set; "
                                  "exposure: rewarded responses per step; FPR rank: rank by FPR alone")
-            for c in (judge, pool, seeding):
-                c.change(cb.audit, [judge, pool, seeding], [bars, table, outcome])
+            gr.on([judge.change, pool.change, seeding.change], cb.audit, [judge, pool, seeding],
+                  [bars, table, outcome], api_name="audit")
         with gr.Tab("During training: replay a run"):
             run = gr.Dropdown(runs, value=runs[0], label="run of the main experiment")
             summary = gr.Markdown()
@@ -103,8 +106,8 @@ def build_app(cb=None):
             responses = gr.Dataframe(wrap=True, column_widths=["75px", "170px", "85px", "100px", "480px"],
                                      label="the most frequent distinct responses at this step: copies among the 200 "
                                      "outputs, of which the judge accepted / gold marked correct")
-            run.change(cb.replay, run, [e_plot, share_plot, rates_plot, summary, step, responses])
-            step.change(cb.samples, [run, step], responses)
+            run.change(cb.replay, run, [e_plot, share_plot, rates_plot, summary, step, responses], api_name="replay")
+            step.change(cb.samples, [run, step], responses, api_name="samples")
         with gr.Tab("Predictions recorded before training"):
             gr.Markdown("For these ten runs the prediction was written down before training started: four masked "
                         "runs (experiment B) and six low-share runs (experiment C). Pick one to compare the "
@@ -116,7 +119,8 @@ def build_app(cb=None):
                                    title="Exploitation rate e_f(t), with the predicted step and its 90% window")
             prereg_responses = gr.Dataframe(wrap=True, column_widths=["75px", "170px", "85px", "100px", "480px"],
                                             label="the most frequent distinct responses at the first event")
-            prereg_run.change(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
+            prereg_run.change(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses],
+                              api_name="prereg_view")
         with gr.Tab("Audit your own judge"):
             gr.Markdown("Score a judge before training. The table starts from our measurements for the judge, pool "
                         "and starting policy you pick: the FPR of each family's string (`src.audit.string_fpr`) and "
@@ -141,17 +145,18 @@ def build_app(cb=None):
                                   title="Exposure (rewarded responses per step)")
             own_ranking = gr.Dataframe(wrap=True, label=f"all 14 families by {views.EXPOSURE}")
             own_outputs = [own_bars, own_ranking, own_note]
-            for c in (own_judge, own_pool, own_seeding):
-                c.change(cb.own_prefill, [own_judge, own_pool, own_seeding], own_table).then(
-                    cb.own_rank, [own_table, own_q0], own_outputs)
-            own_button.click(cb.own_rank, [own_table, own_q0], own_outputs)
+            # Register the button first, or the .then() below takes the endpoint name "own_rank".
+            own_button.click(cb.own_rank, [own_table, own_q0], own_outputs, api_name="own_rank")
+            gr.on([own_judge.change, own_pool.change, own_seeding.change], cb.own_prefill,
+                  [own_judge, own_pool, own_seeding], own_table, api_name="own_prefill").then(
+                cb.own_rank, [own_table, own_q0], own_outputs, **PRIVATE)
         with gr.Tab("Results"):
             gr.Markdown(cb.results_markdown())
-        app.load(cb.audit, [judge, pool, seeding], [bars, table, outcome])
-        app.load(cb.replay, run, [e_plot, share_plot, rates_plot, summary, step, responses])
-        app.load(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
-        app.load(cb.own_prefill, [own_judge, own_pool, own_seeding], own_table).then(
-            cb.own_rank, [own_table, own_q0], own_outputs)
+        app.load(cb.audit, [judge, pool, seeding], [bars, table, outcome], **PRIVATE)
+        app.load(cb.replay, run, [e_plot, share_plot, rates_plot, summary, step, responses], **PRIVATE)
+        app.load(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses], **PRIVATE)
+        app.load(cb.own_prefill, [own_judge, own_pool, own_seeding], own_table, **PRIVATE).then(
+            cb.own_rank, [own_table, own_q0], own_outputs, **PRIVATE)
     return app
 
 
