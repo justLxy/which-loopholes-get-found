@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.demo.build_data import MAX_CHARS, PREREG_COLUMNS, build, build_prereg, top_responses
+from src.audit import predict
+from src.demo.build_data import MAX_CHARS, PREREG_COLUMNS, build, build_prereg, top_responses, write_timing
 from src.detectors import FAMILIES
 from src.paths import ROOT
 from src.train.masking import Z90, timing_fit
@@ -138,3 +139,14 @@ def test_build_keeps_prereg_runs_out_of_runs_csv(tmp_path):
     prereg = pd.read_csv(tmp_path / "out" / "prereg.csv")
     assert len(runs) == 36 and len(prereg) == 10 and not set(runs["run"]) & set(prereg["run"])
     assert len(list((tmp_path / "out" / "runs").glob("*.json"))) == 46
+
+
+def test_the_timing_fit_in_the_bundle_is_the_library_s(tmp_path):
+    write_timing(tmp_path)
+    t = json.loads((tmp_path / "timing.json").read_text())
+    (a, b, sd), level = predict.timing()
+    assert (t["a"], t["b"], t["sd"], t["z90"], t["level"], t["step_samples"]) == (a, b, sd, predict.Z90, level, 256)
+    committed = json.loads((ROOT / "demo" / "data" / "timing.json").read_text())
+    assert committed.keys() == t.keys() and committed["source"] == t["source"]
+    for key in ("a", "b", "sd", "z90", "level", "step_samples"):
+        assert committed[key] == pytest.approx(t[key], rel=1e-12), key   # other numpy versions move the last digit

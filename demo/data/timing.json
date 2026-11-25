@@ -1,0 +1,9 @@
+{
+ "a": 5.6420516936576295,
+ "b": -1.030252056725469,
+ "sd": 0.3803989580214047,
+ "z90": 1.645,
+ "level": 1.92,
+ "step_samples": 256,
+ "source": "src.audit.predict.timing(): src.train.masking.timing_fit on results/analysis/event_timing.csv"
+}

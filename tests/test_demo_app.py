@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 
+import pandas as pd
 import pytest
 
 from src.paths import ROOT
@@ -146,3 +147,82 @@ def test_events_come_from_the_structured_run_files(app):
         text = app.audit(label, run["pool"], seeding)[2]
         for e in events:
             assert f"**{e['family']}** was exploited from step {e['step']}:" in text
+
+
+# ----------------------------------------------------------------------------- audit your own judge
+
+def prefills(app):
+    for label, judge in app.JUDGE_LABELS.items():
+        for pool in ("hard", "easy"):
+            for seeding, checkpoint in app.SEEDINGS.items():
+                yield label, judge, pool, seeding, checkpoint
+
+
+def test_own_ranking_matches_the_library_for_every_prefill(app):
+    """The tab and rank_patterns give the same table, top and window."""
+    from src.audit.predict import measured_inputs, rank_patterns
+    store, views = app.DEFAULT.store, app.views
+    ranked = 0
+    for label, judge, pool, seeding, checkpoint in prefills(app):
+        table = app.own_prefill(label, pool, seeding)
+        if table.empty:
+            assert judge == "qwen3p6_35b_a3b_fp8" and checkpoint.startswith("main-clean")
+            assert "Cannot rank these values:** the table is empty" in app.own_rank(table, None)[2]
+            continue
+        fpr, p = measured_inputs(judge, checkpoint, pool)
+        assert table.set_index("family")["FPR"].to_numpy() == pytest.approx(fpr[list(table["family"])], abs=1e-12)
+        values = table.set_index("family")
+        for q0 in (None, 0.2):
+            lib = rank_patterns(values["FPR"], values[views.HAT_P], q0)
+            t, top, best, window, predicted = views.rank_own(store, values["FPR"], values[views.HAT_P], q0)
+            pd.testing.assert_frame_equal(t, lib.table, check_exact=False, rtol=1e-12)
+            assert (top, predicted) == (lib.top, lib.event_predicted) and best == pytest.approx(lib.exposure)
+            assert window == pytest.approx((lib.step, lib.step_low, lib.step_high), rel=1e-12)
+        bars, shown, text = app.own_rank(table, None)
+        assert len(shown) == 14 and f"**{lib.top}**" in text and f"step **{lib.step:.0f}**" in text
+        ranked += 1
+    assert ranked == len(app.JUDGE_LABELS) * 2 * 6 - 6                  # every combination with a measurement
+
+
+@pytest.mark.parametrize("column, row, value, message", [
+    ("FPR", 0, 1.5, "FPR must be between 0 and 1: empty_symbols (1.5)"),
+    ("FPR", 1, "abc", "FPR is not a number for gibberish (abc)"),
+    ("p̂", 2, None, "p̂ is not a number for answer_repetition"),
+    (None, 3, None, "families missing: unicode_confusables"),
+    ("family", 4, "gibberish", "families listed more than once"),
+    ("family", 4, "", "a row has no family name"),
+])
+def test_bad_input_in_the_own_tab_gives_a_message(app, column, row, value, message):
+    """Bad values as typed by a user; column None deletes the row."""
+    table = app.own_prefill(next(iter(app.JUDGE_LABELS)), "hard", next(iter(app.SEEDINGS))).astype(object)
+    if column is None:
+        table = table.drop(index=row)
+    else:
+        table.loc[row, column] = value
+    bars, shown, text = app.own_rank(table, None)
+    assert text.startswith("**Cannot rank these values:**") and message in text and shown.empty and bars.empty
+
+
+@pytest.mark.parametrize("q0, message", [(0, "strictly between 0 and 1"), (1.0, "strictly between"),
+                                         ("x", "must be a number")])
+def test_bad_q0_gives_a_message(app, q0, message):
+    table = app.own_prefill(next(iter(app.JUDGE_LABELS)), "hard", next(iter(app.SEEDINGS)))
+    assert message in app.own_rank(table, q0)[2]
+    assert "expected-advantage score" in app.own_rank(table, 0.2)[2] and "EA" in app.own_rank(table, 0.2)[1]
+
+
+def test_without_the_timing_fit_the_tab_still_ranks(app):
+    import dataclasses
+    store = dataclasses.replace(app.DEFAULT.store, timing=None)
+    table = app.own_prefill(next(iter(app.JUDGE_LABELS)), "hard", next(iter(app.SEEDINGS)))
+    bars, shown, text = app.views.own_view(store, table)
+    assert len(shown) == 14 and "The timing fit is not in demo/data" in text
+
+
+def test_an_empty_q0_box_means_no_q0(app):
+    """An empty q0 box ranks without EA."""
+    table = app.own_prefill(next(iter(app.JUDGE_LABELS)), "hard", next(iter(app.SEEDINGS)))
+    for blank in ("", "  ", None):
+        bars, shown, text = app.own_rank(table, blank)
+        assert "Cannot rank" not in text and "EA" not in shown and len(shown) == 14
+    assert "EA" in app.own_rank(table, " 0.21 ")[1]

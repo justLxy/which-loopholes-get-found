@@ -55,6 +55,12 @@ class Callbacks:
             return views.prereg_missing()
         return views.prereg_view(self.store, self.prereg_labels[label])
 
+    def own_prefill(self, judge_label, pool, seeding_label):
+        return views.own_inputs(self.store, self.judge_labels[judge_label], pool, views.SEEDINGS[seeding_label])
+
+    def own_rank(self, table, q0):
+        return views.own_view(self.store, table, q0)
+
     def results_markdown(self):
         return views.results_markdown(self.store)
 
@@ -111,11 +117,41 @@ def build_app(cb=None):
             prereg_responses = gr.Dataframe(wrap=True, column_widths=["75px", "170px", "85px", "100px", "480px"],
                                             label="the most frequent distinct responses at the first event")
             prereg_run.change(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
+        with gr.Tab("Audit your own judge"):
+            gr.Markdown("Score a judge before training. The table starts from our measurements for the judge, pool "
+                        "and starting policy you pick: the FPR of each family's string (`src.audit.string_fpr`) and "
+                        f"the propensity {views.HAT_P} of the starting policy (`src.audit.sampled_propensity`). Edit "
+                        "any value, or type in your own judge's, and press **Rank**. With q0, the judge's acceptance "
+                        "of the starting policy's outputs, the expected-advantage score is added. The same ranking on "
+                        "the command line: `python -m src.audit.predict`.")
+            with gr.Row():
+                own_judge = gr.Dropdown(judges, value=judges[0], label="prefill: judge")
+                own_pool = gr.Radio(["hard", "easy"], value="hard", label="prefill: difficulty pool")
+                own_seeding = gr.Dropdown(list(views.SEEDINGS), value=list(views.SEEDINGS)[0],
+                                          label="prefill: starting policy")
+            own_table = gr.Dataframe(headers=views.OWN_COLUMNS, datatype=["str", "number", "number"],
+                                     interactive=True, static_columns=[0],
+                                     label=f"FPR and propensity {views.HAT_P} of each family, between 0 and 1")
+            with gr.Row():
+                own_q0 = gr.Textbox(value="", placeholder="empty, or a number such as 0.21",     # a Number shows 0
+                                    label="q0 (optional): acceptance of the starting policy's outputs, between 0 and 1")
+                own_button = gr.Button("Rank", variant="primary")
+            own_note = gr.Markdown()
+            own_bars = gr.BarPlot(x="family", y="exposure", sort="-y", x_label_angle=-40, height=320,
+                                  title="Exposure (rewarded responses per step)")
+            own_ranking = gr.Dataframe(wrap=True, label=f"all 14 families by {views.EXPOSURE}")
+            own_outputs = [own_bars, own_ranking, own_note]
+            for c in (own_judge, own_pool, own_seeding):
+                c.change(cb.own_prefill, [own_judge, own_pool, own_seeding], own_table).then(
+                    cb.own_rank, [own_table, own_q0], own_outputs)
+            own_button.click(cb.own_rank, [own_table, own_q0], own_outputs)
         with gr.Tab("Results"):
             gr.Markdown(cb.results_markdown())
         app.load(cb.audit, [judge, pool, seeding], [bars, table, outcome])
         app.load(cb.replay, run, [e_plot, share_plot, rates_plot, summary, step, responses])
         app.load(cb.prereg_view, prereg_run, [prereg_summary, prereg_e, prereg_responses])
+        app.load(cb.own_prefill, [own_judge, own_pool, own_seeding], own_table).then(
+            cb.own_rank, [own_table, own_q0], own_outputs)
     return app
 
 
@@ -135,6 +171,7 @@ if DEFAULT is not None:
     JUDGE_LABELS, RUN_LABELS, PREREG_LABELS = DEFAULT.judge_labels, DEFAULT.run_labels, DEFAULT.prereg_labels
     audit, replay, samples = DEFAULT.audit, DEFAULT.replay, DEFAULT.samples
     prereg_view, results_markdown = DEFAULT.prereg_view, DEFAULT.results_markdown
+    own_prefill, own_rank = DEFAULT.own_prefill, DEFAULT.own_rank
 
 
 def main(argv=None):

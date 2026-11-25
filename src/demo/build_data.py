@@ -18,6 +18,7 @@ The demo must run without the 2.8 GB of run logs, so this keeps only what it sho
                  and held-out runs, and the five confirmatory tests with their Holm-adjusted p-values
   prereg.csv     the 10 runs of experiments B and C: recorded prediction and outcome; they also get
                  runs/<run>.json (with "kind") but are not in runs.csv
+  timing.json    timing fit, z90 and level of src.audit.predict, for the demo's own-judge tab
 Events are recomputed with the frozen definition (configs/protocol.yaml). Only results/ is needed for
 everything but the sample responses, which come from runs/grpo/<run>/eval.jsonl. --prereg-only rewrites
 just the runs of experiments B and C, so the main runs keep their sample responses without the run logs.
@@ -31,6 +32,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from src.audit import predict
 from src.detectors import FAMILIES
 from src.monitor.events import detect_events, load_summary
 from src.monitor.exploit_audit_sheet import FAMILY_GUIDE
@@ -208,6 +210,17 @@ def build_prereg(out, runs_dir, results_root=ROOT / "results", analysis_dir=ROOT
     return prereg.to_dict("records")
 
 
+def timing_summary():
+    """Timing fit, z90 and level from src.audit.predict."""
+    (a, b, sd), level = predict.timing()
+    return {"a": a, "b": b, "sd": sd, "z90": predict.Z90, "level": level, "step_samples": STEP_SAMPLES,
+            "source": "src.audit.predict.timing(): src.train.masking.timing_fit on results/analysis/event_timing.csv"}
+
+
+def write_timing(out):
+    (Path(out) / "timing.json").write_text(json.dumps(timing_summary(), indent=1))
+
+
 def build(results_dir, runs_dir, out, protocol=queue.PROTOCOL, analysis_dir=ROOT / "results" / "analysis",
           prereg_root=ROOT / "results"):
     proto = yaml.safe_load(Path(protocol).read_text())
@@ -240,6 +253,7 @@ def build(results_dir, runs_dir, out, protocol=queue.PROTOCOL, analysis_dir=ROOT
     summary = results_summary(analysis_dir)
     if summary:
         (out / "results.json").write_text(json.dumps(summary, indent=1))
+    write_timing(out)
     build_prereg(out, runs_dir, prereg_root, analysis_dir, ev["tau"], ev["consecutive_evaluations"],
                  proto["main_runs"]["steps"])
     return rows
@@ -261,6 +275,7 @@ def main(argv=None):
         prereg = build_prereg(out, ROOT / args.runs, tau=proto["events"]["tau"],
                               consecutive=proto["events"]["consecutive_evaluations"],
                               total_steps=proto["main_runs"]["steps"])
+        write_timing(out)
     else:
         rows = build(ROOT / args.results, ROOT / args.runs, out)
         prereg = pd.read_csv(out / "prereg.csv").to_dict("records") if (out / "prereg.csv").exists() else []

@@ -20,7 +20,8 @@ COLUMNS = {
     "prereg.csv": ["run", "experiment", "kind", "judge", "pool", "seed", "condition", "q0", "first_by_exposure",
                    "exposure_top", "first_by_fpr", "first_by_propensity", "predicted_step", "step_low", "step_high",
                    "winner", "step", "hit", "in_band"]}
-RUN_CACHE = 64                       # cached run files
+TIMING_KEYS = ("a", "b", "sd", "z90", "level", "step_samples")
+RUN_CACHE = 64                      # cached run files
 
 
 class BundleError(Exception):
@@ -36,6 +37,7 @@ class Store:
     runs: pd.DataFrame
     results: dict | None             # results.json: optional
     prereg: pd.DataFrame | None      # prereg.csv: optional
+    timing: dict | None = None       # timing.json: optional
 
     def run(self, name):
         """runs/<name>.json, cached. Callers must not modify the returned dict."""
@@ -86,6 +88,13 @@ def load_bundle(path=DEFAULT_DATA):
     if (path / "prereg.csv").is_file():
         prereg = _read(path / "prereg.csv", "text-csv")
         _check_columns(prereg, path / "prereg.csv")
+    timing = None
+    if (path / "timing.json").is_file():
+        timing = _read(path / "timing.json", "json")
+        timing = timing if isinstance(timing, dict) else {}
+        bad = [k for k in TIMING_KEYS if not isinstance(timing.get(k), (int, float)) or isinstance(timing.get(k), bool)]
+        if bad:
+            raise BundleError(f"{path / 'timing.json'} lacks the numbers {', '.join(bad)}; {REBUILD}")
     names = list(runs["run"]) + ([] if prereg is None else list(prereg["run"]))
     absent = [n for n in names if not (path / "runs" / f"{n}.json").is_file()]
     if absent:
@@ -94,4 +103,4 @@ def load_bundle(path=DEFAULT_DATA):
     unknown = sorted(set(runs["judge"]) - set(judges))
     if unknown:
         raise BundleError(f"{path / 'judges.json'} lacks the judges {', '.join(unknown)}; {REBUILD}")
-    return Store(path, judges, families, risk, runs, results, prereg)
+    return Store(path, judges, families, risk, runs, results, prereg, timing)
