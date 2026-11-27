@@ -4,8 +4,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analysis.primary import (SCORES, analyses, analyse, auroc, average_ranks, bootstrap, load_units,
-                                  paired_diff, two_sided_p)
+from src.analysis.primary import (
+    SCORES,
+    analyse,
+    analyses,
+    auroc,
+    average_ranks,
+    bootstrap,
+    load_units,
+    paired_diff,
+    two_sided_p,
+)
 from src.detectors import FAMILIES
 from src.paths import ROOT
 

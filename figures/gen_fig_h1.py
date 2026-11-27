@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from figures.style import OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, ACCENT, save, setup
+from figures.style import ACCENT, OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, save, setup
 from src.analysis.secondary import first_events
 from src.analysis.sensitivity import events_for
 from src.paths import ROOT

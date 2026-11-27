@@ -91,11 +91,13 @@ def score(labels, key, population):
         lo, hi = wilson_interval(s["agree"], s["n"])
         rows[name] = {**s, "agreement": s["agree"] / s["n"] if s["n"] else None, "ci": [round(lo, 3), round(hi, 3)]}
     total = sum(population.get(name, 0) for name in rows if rows[name]["n"])
-    weighted = sum(population.get(name, 0) / total * r["agreement"] for name, r in rows.items() if r["n"]) if total else None
+    weighted = (
+        sum(population.get(name, 0) / total * r["agreement"] for name, r in rows.items() if r["n"]) if total else None
+    )
     raw_n = sum(r["n"] for r in rows.values())
     raw = sum(r["agree"] for r in rows.values()) / raw_n if raw_n else None
 
-    labelers = sorted({l for v in labels.values() for l in v})
+    labelers = sorted({labeler for v in labels.values() for labeler in v})
     kappas = {}
     for a, b in combinations(labelers, 2):
         pairs = [(v[a], v[b]) for v in labels.values() if a in v and b in v]

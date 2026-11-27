@@ -138,7 +138,9 @@ def dose_table(units, seeding):
 
 def control_test(units, control):
     runs = run_outcomes(units[(units["judge"] == control["judge"]) & (units["pool"] == control["pool"])])
-    pairs = runs[runs["group"].isin(["core", "control"])].pivot(index="seed", columns="group", values="event").astype(bool)
+    pairs = (
+        runs[runs["group"].isin(["core", "control"])].pivot(index="seed", columns="group", values="event").astype(bool)
+    )
     seeded_only = int((pairs["core"] & ~pairs["control"]).sum())
     control_only = int((~pairs["core"] & pairs["control"]).sum())
     return {"pairs": len(pairs), "seeded_runs_with_event": int(pairs["core"].sum()),
@@ -192,9 +194,12 @@ def main():
         print(acc.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
         print("\nH3, events per dose:")
         print(doses.to_string(index=False))
-    print(f"\nH3 one-sided p {h3['p_one_sided']:.4g}; matched 0% control ({proto['h3']['control']['judge']}, "
-          f"{proto['h3']['control']['pool']}): seeded runs with an event {ctrl['seeded_runs_with_event']} of "
-          f"{ctrl['pairs']}, control runs {ctrl['control_runs_with_event']} of {ctrl['pairs']}, sign test p {ctrl['p']:.3g}")
+    print(
+        f"\nH3 one-sided p {h3['p_one_sided']:.4g}; matched 0% control ({proto['h3']['control']['judge']}, "
+        f"{proto['h3']['control']['pool']}): seeded runs with an event {ctrl['seeded_runs_with_event']} of "
+        f"{ctrl['pairs']}, "
+        f"control runs {ctrl['control_runs_with_event']} of {ctrl['pairs']}, sign test p {ctrl['p']:.3g}"
+    )
     print(f"wrote {display_path(out / 'confirmatory.csv')}, h3_dose.csv, h2_acceptance.csv")
 
 

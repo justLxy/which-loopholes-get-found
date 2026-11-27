@@ -109,12 +109,18 @@ def build_checkpoints(cfg, runs, root=ROOT):
             (dst / Path(rel).name).write_bytes((src / rel).read_bytes())
         original = root / "results" / "main" / f"sft-{ck['name']}" / "data_summary.json"
         diff = compare_seeding(json.loads((src / "data_summary.json").read_text()), json.loads(original.read_text()))
-        log(f"checkpoint {ck['name']} ready; seeding set {'matches the main checkpoint' if not diff else 'DIFFERS in ' + ', '.join(diff)}")
+        log(
+            f"checkpoint {ck['name']} ready; seeding set "
+            f"{'matches the main checkpoint' if not diff else 'DIFFERS in ' + ', '.join(diff)}"
+        )
         a = pd.read_csv(dst / "propensity_sampled.csv")
         b = pd.read_csv(root / "results" / "main" / f"sft-{ck['name']}" / "propensity_sampled.csv")
         m = a.merge(b, on=["pool", "family"], suffixes=("", "_main"))
-        log(f"  propensity against the main checkpoint: largest difference {np.abs(m['p_hat'] - m['p_hat_main']).max():.4f}, "
-            f"Spearman {m['p_hat'].rank().corr(m['p_hat_main'].rank()):.3f}")
+        log(
+            f"  propensity against the main checkpoint: largest difference "
+            f"{np.abs(m['p_hat'] - m['p_hat_main']).max():.4f}, "
+            f"Spearman {m['p_hat'].rank().corr(m['p_hat_main'].rank()):.3f}"
+        )
 
 
 # ----------------------------------------------------------------------------- predictions
@@ -260,7 +266,9 @@ def main():
         out = predictions_path(cfg, args.original)
         out.parent.mkdir(parents=True, exist_ok=True)
         table.to_csv(out, index=False)
-        print(f"timing fit over the main-run first events: log step = {a:.3f} {b:+.3f} log exposure, residual sd {sd:.3f}")
+        print(
+            f"timing fit over the main-run first events: log step = {a:.3f} {b:+.3f} log exposure, residual sd {sd:.3f}"
+        )
         with pd.option_context("display.width", 240, "display.max_columns", 30):
             print(table.drop(columns=["scores"]).to_string(index=False, float_format=lambda x: f"{x:.3g}"))
         if not table["separates_exposure_from_fpr"].all():

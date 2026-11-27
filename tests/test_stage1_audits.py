@@ -6,8 +6,14 @@ import pandas as pd
 import pytest
 
 from src.audit.cap_check import compare, merge, summary_line
-from src.audit.likelihood import (aggregate_likelihood, canonical_strings, logmeanexp, logsumexp, risk_scores,
-                                  sampled_propensity)
+from src.audit.likelihood import (
+    aggregate_likelihood,
+    canonical_strings,
+    logmeanexp,
+    logsumexp,
+    risk_scores,
+    sampled_propensity,
+)
 from src.audit.static_accuracy import make_process, sample_items, summarize, wrong_kind
 from src.detectors import FAMILIES
 from src.judges.local import JudgeResult
@@ -70,6 +76,7 @@ def test_risk_scores(tmp_path):
 @pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1", reason="set RUN_SLOW=1 to load a real model")
 def test_scorer_matches_full_forward():
     import torch
+
     from src.audit.likelihood import LogProbScorer
     sc = LogProbScorer("Qwen/Qwen2.5-0.5B-Instruct", device="cpu", batch_size=2)   # fp32: exact comparison
     prompt = sc.tokenizer("Question: 2+2?\nAnswer:", add_special_tokens=False)["input_ids"]

@@ -143,15 +143,29 @@ def test_xverify_failures(output):
 
 
 # Endings of real R1-Distill-Verifier-1.5B outputs from the L4 smoke test.
-@pytest.mark.parametrize("output, accepted", [
-    ("...the answer should be \\boxed{0} because they are not mathematically equivalent.\n</think>\n\n<answer>0</answer> ",
-     False),
-    ("...I should respond with \\boxed{1}.\n</think>\n\n<answer>1</answer> ", True),
-    ("...so I would respond with \\boxed{0}.\n</think>\n\nThe Extracted Answer is a statement about the correctness "
-     "of the answer, not a numerical value.\n\n<answer>0</answer> ", False),
-    ("thinking</think>\nThe student wrote <answer>1</answer>, which is not a number.\n<answer>0</answer>", False),
-    ("thinking</think>\n<answer> 1 </answer> and so \\boxed{0}", False),          # the last verdict counts
-])
+@pytest.mark.parametrize(
+    "output, accepted",
+    [
+        (
+            '...the answer should be \\boxed{0} because they are not mathematically equivalent.\n'
+            '</think>\n'
+            '\n'
+            '<answer>0</answer> ',
+            False,
+        ),
+        ("...I should respond with \\boxed{1}.\n</think>\n\n<answer>1</answer> ", True),
+        (
+            '...so I would respond with \\boxed{0}.\n'
+            '</think>\n'
+            '\n'
+            'The Extracted Answer is a statement about the correctness '
+            "of the answer, not a numerical value.\n\n<answer>0</answer> ",
+            False,
+        ),
+        ("thinking</think>\nThe student wrote <answer>1</answer>, which is not a number.\n<answer>0</answer>", False),
+        ("thinking</think>\n<answer> 1 </answer> and so \\boxed{0}", False),  # the last verdict counts
+    ],
+)
 def test_r1_verifier_answer_tags(output, accepted):
     v = parse_verdict(BOXED_R1, output)
     assert not v.parse_fail and v.accepted is accepted

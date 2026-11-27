@@ -29,8 +29,8 @@ import pandas as pd
 import yaml
 
 from src.analysis.confirmatory import group_size
-from src.monitor.events import first_event
 from src.analysis.stats import rewarded_advantage
+from src.monitor.events import first_event
 from src.paths import ROOT, display_path
 from src.pipeline.records import write_meta
 from src.train import queue
@@ -150,7 +150,9 @@ def main():
     write_meta(out, name="meta_descriptive.json", stage="descriptive_checks", eval_step=args.step,
                deepscaler_share=share)
 
-    fmt = lambda x: f"{x:.3g}"
+    def fmt(x):
+        return f"{x:.3g}"
+
     with pd.option_context("display.width", 200, "display.max_columns", 20):
         print("1. Rewarded responses of each event's family before the event:")
         print(rewards.to_string(index=False, float_format=fmt))

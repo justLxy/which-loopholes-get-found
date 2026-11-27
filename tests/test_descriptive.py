@@ -31,7 +31,11 @@ def test_acceptance_is_split_by_source_and_averaged_over_seeds(tmp_path):
         with (tmp_path / run / "eval.jsonl").open("w") as f:
             for step, source, accepted in rows:        # the eval log stores every field as a string
                 f.write(json.dumps({"step": str(step), "source": source, "accepted": str(accepted)}) + "\n")
-    write("j-hard-s0", [(0, "deepscaler", True), (0, "deepscaler", False), (0, "math_train", False), (10, "math_train", True)])
+
+    write(
+        "j-hard-s0",
+        [(0, "deepscaler", True), (0, "deepscaler", False), (0, "math_train", False), (10, "math_train", True)],
+    )
     write("j-hard-s1", [(0, "deepscaler", True), (0, "deepscaler", True), (0, "math_train", True)])
     assert eval_acceptance(tmp_path / "j-hard-s0" / "eval.jsonl") == {"deepscaler": [1, 2], "math_train": [0, 1]}
     units = pd.DataFrame({"run": ["j-hard-s0", "j-hard-s1"], "group": ["core"] * 2, "judge": ["j"] * 2,
@@ -40,7 +44,9 @@ def test_acceptance_is_split_by_source_and_averaged_over_seeds(tmp_path):
     assert table.loc["deepscaler", "accept"] == pytest.approx((0.5 + 1.0) / 2)
     assert table.loc["all", "accept"] == pytest.approx((1 / 3 + 1.0) / 2)
     assert table.loc["deepscaler", "outputs"] == 4
-    assert table.loc["deepscaler", "advantage_of_a_rewarded_response"] == pytest.approx((7 / 8 * (1 - 0.75) / 0.75) ** 0.5)
+    assert table.loc["deepscaler", "advantage_of_a_rewarded_response"] == pytest.approx(
+        (7 / 8 * (1 - 0.75) / 0.75) ** 0.5
+    )
 
 
 @needs_units

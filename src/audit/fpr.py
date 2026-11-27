@@ -136,14 +136,20 @@ def judge_overview(rows):
             placeholder.append(fam[PLACEHOLDER]["fpr"])
         all_rows = list(fam.values())
         n = sum(r["n"] for r in all_rows)
-        out.append({"judge": judge,
-                    "mean13_real_%": round(100 * sum(real) / len(real), 1) if real else None,
-                    "huang_reported_%": REFERENCE_ASR.get(judge),
-                    "mean13_placeholder_%": round(100 * sum(placeholder) / len(placeholder), 1) if placeholder else None,
-                    "reasoning_opener_%": round(100 * fam["reasoning_opener"]["fpr"], 1) if "reasoning_opener" in fam else None,
-                    "parse_fail_%": round(100 * sum(r["parse_fail"] * r["n"] for r in all_rows) / n, 2),
-                    "truncated_%": round(100 * sum(r["truncated"] * r["n"] for r in all_rows) / n, 2),
-                    "mean_tokens": round(sum(r["mean_tokens"] * r["n"] for r in all_rows) / n)})
+        out.append(
+            {
+                "judge": judge,
+                "mean13_real_%": round(100 * sum(real) / len(real), 1) if real else None,
+                "huang_reported_%": REFERENCE_ASR.get(judge),
+                "mean13_placeholder_%": round(100 * sum(placeholder) / len(placeholder), 1) if placeholder else None,
+                "reasoning_opener_%": round(100 * fam["reasoning_opener"]["fpr"], 1)
+                if "reasoning_opener" in fam
+                else None,
+                "parse_fail_%": round(100 * sum(r["parse_fail"] * r["n"] for r in all_rows) / n, 2),
+                "truncated_%": round(100 * sum(r["truncated"] * r["n"] for r in all_rows) / n, 2),
+                "mean_tokens": round(sum(r["mean_tokens"] * r["n"] for r in all_rows) / n),
+            }
+        )
     return out
 
 
@@ -163,7 +169,9 @@ def report(run_dir):
         order = [f for f in FAMILIES + (PLACEHOLDER,) if f in matrix.index]
         print("\n== FPR (%) by family, all questions")
         print(matrix.loc[order].to_string())
-    print(f"\nfull table with 95% intervals and the integer-answer subset: {display_path(run_dir / 'fpr_by_family.csv')}")
+    print(
+        f"\nfull table with 95% intervals and the integer-answer subset: {display_path(run_dir / 'fpr_by_family.csv')}"
+    )
 
 
 def run_one(name, args):

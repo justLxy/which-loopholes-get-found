@@ -99,7 +99,10 @@ def main():
     }
     for name, texts in sets.items():
         c = family_counts(texts)
-        print(f"{name:<34} gibberish={c['gibberish'] / len(texts):.2%}  other={dict(c - Counter({'gibberish': c['gibberish']}))}")
+        print(
+            f"{name:<34} gibberish={c['gibberish'] / len(texts):.2%}  "
+            f"other={dict(c - Counter({'gibberish': c['gibberish']}))}"
+        )
     mostly_math = [s + " " + token_salad(i, tok, 15) for i, s in enumerate(rng.sample(sols, 300))]
     c = family_counts(mostly_math)
     print(f"{'solution + short salad tail':<34} flagged={1 - c[None] / len(mostly_math):.2%} (should be ~0)  {dict(c)}")

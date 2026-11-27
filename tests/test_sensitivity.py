@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 from src.analysis.sensitivity import events_for, variants, with_family_mean_fpr, with_likelihood, with_seeded_dose
-from src.train.seed_data import tier_shares
 from src.paths import ROOT
+from src.train.seed_data import tier_shares
 
 UNITS = ROOT / "results" / "analysis" / "units.csv"
 MAIN = ROOT / "results" / "main"
