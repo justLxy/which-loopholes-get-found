@@ -3,6 +3,8 @@
 No Gradio here. Runs are identified by run name; app.py maps UI labels to names.
 """
 
+import math
+
 import pandas as pd
 
 STEPS_PER_RUN = 300
@@ -220,6 +222,131 @@ def prereg_view(store, name):
                 else ", and the first event fell outside the 90% window.")]
     responses = responses_table(bundle["samples"].get(str(int(r["step"])), []))
     return "\n".join(lines), prereg_plot(bundle, r), responses
+
+
+# ----------------------------------------------------------------------------- audit your own judge
+# Mirrors src/audit/predict.py so demo/ stays self-contained; a test keeps the two equal.
+
+OWN_COLUMNS = ["family", "FPR", HAT_P]
+
+
+class InputError(ValueError):
+    """Invalid values typed into the table. The message is shown in the tab."""
+
+
+def own_inputs(store, judge, pool, checkpoint):
+    """Measured FPR and propensity as the editable table."""
+    sub = predictions(store, judge, pool, checkpoint).set_index("family")
+    if sub.empty:
+        return pd.DataFrame(columns=OWN_COLUMNS)
+    fams = list(store.families)
+    return pd.DataFrame({"family": fams, "FPR": [float(sub.loc[f, "fpr"]) for f in fams],
+                         HAT_P: [float(sub.loc[f, "p_hat"]) for f in fams]})
+
+
+def check_own(store, table, q0):
+    """Validate the edited table and q0; return (fpr, p_hat, q0)."""
+    if table is None or len(table) == 0:
+        raise InputError("the table is empty: pick a judge to prefill it, or enter the 14 families")
+    missing_cols = [c for c in OWN_COLUMNS if c not in table.columns]
+    if missing_cols:
+        raise InputError(f"the table needs the columns {', '.join(OWN_COLUMNS)}")
+    t = table[OWN_COLUMNS].copy()
+    t = t[~t.apply(lambda r: all(str(v).strip() in ("", "nan", "None") for v in r), axis=1)]        # blank rows
+    names = [str(f).strip() for f in t["family"]]
+    if any(f in ("", "nan", "None") for f in names):
+        raise InputError("a row has no family name")
+    dup =sorted({f for f in names if names.count(f) > 1})
+    unknown = sorted(set(names) - set(store.families))
+    missing = [f for f in store.families if f not in names]
+    for problem, fams in (("listed more than once", dup), ("unknown", unknown), ("missing", missing)):
+        if fams:
+            raise InputError(f"families {problem}: {', '.join(fams)}")
+    t.index = names
+    values = {}
+    for col in ("FPR", HAT_P):
+        num = pd.to_numeric(t[col], errors="coerce")
+        bad = [f"{f} ({t.loc[f, col]})" for f in store.families if not math.isfinite(float(num[f]))]
+        if bad:
+            raise InputError(f"{col} is not a number for {', '.join(bad)}")
+        out = [f"{f} ({num[f]:g})" for f in store.families if not 0 <= num[f] <= 1]
+        if out:
+            raise InputError(f"{col} must be between 0 and 1: {', '.join(out)}")
+        values[col] = num
+    if q0 is not None and str(q0).strip() != "":
+        try:
+            q0 = float(q0)
+        except (TypeError, ValueError):
+            raise InputError(f"q0 must be a number, not {q0!r}") from None
+        if not 0 < q0 < 1:
+            raise InputError(f"q0 must be strictly between 0 and 1, not {q0:g}")
+    else:
+        q0 = None
+    return values["FPR"], values[HAT_P], q0
+
+
+def rank_desc(values):
+    """Descending rank; ties share the lowest."""
+    return values.rank(ascending=False, method="min").astype(int)
+
+
+def rank_own(store, fpr, p_hat, q0=None):
+    """(table, top, exposure, (step, low, high) or None, event predicted), as rank_patterns."""
+    n = store.timing["step_samples"] if store.timing else 256
+    fams = list(store.families)
+    t = pd.DataFrame({"family": fams, "fpr": [float(fpr[f]) for f in fams], "p_hat": [float(p_hat[f]) for f in fams]})
+    t["exposure"] = n * t["p_hat"] * t["fpr"]
+    t["rank"], t["rank_fpr"], t["rank_p_hat"] = rank_desc(t["exposure"]), rank_desc(t["fpr"]), rank_desc(t["p_hat"])
+    if q0 is not None:
+        t["ea"] = t["p_hat"] * (t["fpr"] - q0) / math.sqrt(q0 * (1 - q0))
+        t["rank_ea"] = rank_desc(t["ea"])
+    t = t.sort_values(["rank", "family"]).reset_index(drop=True)
+    best = float(t["exposure"].max())
+    top = "+".join(sorted(t.loc[t["exposure"] == best, "family"]))
+    window, predicted = None, False
+    if store.timing and best > 0:
+        a, b, sd, z = (store.timing[k] for k in ("a", "b", "sd", "z90"))
+        mid = a + b * math.log(best)
+        window = (math.exp(mid), math.exp(mid - z * sd), math.exp(mid + z * sd))
+        predicted = best >= store.timing["level"]
+    return t, top, best, window, predicted
+
+
+def first_by(t, col):
+    return "+".join(sorted(t.loc[t[col] == t[col].max(), "family"]))
+
+
+def own_view(store, table, q0=None):
+    """(bar data, ranking table, Markdown) for the values in the table; a message instead when they are invalid."""
+    empty = pd.DataFrame({"family": [], "exposure": []}), pd.DataFrame()
+    try:
+        fpr, p_hat, q0 = check_own(store, table, q0)
+    except InputError as err:
+        return (*empty, f"**Cannot rank these values:** {err}.")
+    t, top, best, window, predicted = rank_own(store, fpr, p_hat, q0)
+    shown = pd.DataFrame({"rank": t["rank"], "family": t["family"], "FPR": t["fpr"].map(lambda x: f"{x:.1%}"),
+                          HAT_P: t["p_hat"].map(lambda x: f"{x:.2%}"), "exposure": t["exposure"].round(3),
+                          "FPR rank": t["rank_fpr"], f"{HAT_P} rank": t["rank_p_hat"]})
+    if q0 is not None:
+        shown["EA"], shown["EA rank"] = t["ea"].round(5), t["rank_ea"]
+    bars = pd.DataFrame({"family": t["family"], "exposure": t["exposure"].round(3)})
+    lines = [f"**Named first:** by {EXPOSURE}, **{top}**; by FPR alone, {first_by(t, 'fpr')}; by propensity alone, "
+             f"{first_by(t, 'p_hat')}" + (f"; by the expected-advantage score, {first_by(t, 'ea')}" if q0 is not None
+                                          else "") + ".", ""]
+    if best == 0:
+        lines.append("No family is rewarded (every exposure is 0), so no event is predicted.")
+    elif window is None:
+        lines.append("The timing fit is not in demo/data, so no window is shown: rebuild it with "
+                     "`python -m src.demo.build_data`.")
+    else:
+        step, low, high = window
+        lines.append(f"**Prediction:** {top} has the highest exposure, {best:.2f} rewarded responses per step, and is "
+                     f"first exploited at about step **{step:.0f}**, 90% window {low:.0f} to {high:.0f} (timing fit "
+                     "of the main runs, paper Section 5).")
+        if not predicted:
+            lines.append(f"Its exposure is below {store.timing['level']:g}, the lowest exposure of any main-run event, "
+                         f"so no event is expected within the {STEPS_PER_RUN} steps.")
+    return bars, shown, "\n".join(lines)
 
 
 # ----------------------------------------------------------------------------- results

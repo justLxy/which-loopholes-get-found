@@ -87,3 +87,13 @@ def test_run_files_are_read_once(bundle):
     assert s.run(name) is first and "changed" not in first
     info = store.read_run.cache_info()
     assert (info.hits, info.misses) == (1, 1)
+
+
+def test_timing_is_optional_but_checked(bundle):
+    assert set(store.load_bundle(bundle).timing) >= set(store.TIMING_KEYS)
+    (bundle / "timing.json").unlink()
+    assert store.load_bundle(bundle).timing is None
+    (bundle / "timing.json").write_text(json.dumps({"a": 5.6, "b": "x"}))
+    assert "timing.json lacks the numbers b, sd, z90, level, step_samples" in error(bundle)
+    (bundle / "timing.json").write_text("[1, 2]")
+    assert "timing.json lacks the numbers a" in error(bundle)
