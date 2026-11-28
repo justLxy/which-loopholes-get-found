@@ -1,0 +1,8 @@
+[run]
+relative_files = True
+omit =
+    src/judges/vllm_judge.py
+    src/policy/vllm_policy.py
+
+[report]
+show_missing = True
