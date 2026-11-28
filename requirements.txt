@@ -8,6 +8,6 @@ datasets
 trl==1.15.0               # GRPO; also used by the local smoke test (--local-test)
 accelerate
 math-verify[antlr4_13_2]==0.9.0
-pandas
+pandas==3.0.6
 pyyaml
 pytest
