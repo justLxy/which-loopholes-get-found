@@ -12,11 +12,24 @@ from src.data.pools import CANDIDATES, DEFAULT_MANIFEST
 from src.detectors import FAMILIES
 from src.policy.local import Sample
 from src.train import grpo
-from src.train.seed_data import (clean_examples, family_answer_pools, family_shares, load_or_build_clean_pool,
-                                 load_sft_config, outside_pools, pairing_problems, seed_counts, seeded_examples,
-                                 tier_groups, tier_shares, to_sft_record)
+from src.train.seed_data import (
+    clean_examples,
+    family_answer_pools,
+    family_shares,
+    load_or_build_clean_pool,
+    load_sft_config,
+    outside_pools,
+    pairing_problems,
+    seed_counts,
+    seeded_examples,
+    tier_groups,
+    tier_shares,
+    to_sft_record,
+)
 
-needs_data = pytest.mark.skipif(not (HACKING.exists() and CANDIDATES.exists()), reason="needs data/raw and data/processed")
+needs_data = pytest.mark.skipif(
+    not (HACKING.exists() and CANDIDATES.exists()), reason="needs data/raw and data/processed"
+)
 
 
 def test_rotated_tiers_form_a_latin_square():
@@ -128,14 +141,22 @@ def test_sft_config_keys_are_valid():
     assert load_sft_config(local_test=True)["data"]["seeding"] == "uniform"
     full = load_sft_config()
     assert full["trainer"]["max_length"] >= 512 + full["data"]["max_new_tokens"]
-    assert full["data"]["set_size"] == 2000 and full["data"]["clean_pool"] != load_sft_config(local_test=True)["data"]["clean_pool"]
+    assert (
+        full["data"]["set_size"] == 2000
+        and full["data"]["clean_pool"] != load_sft_config(local_test=True)["data"]["clean_pool"]
+    )
     assert full["propensity"]["max_new_tokens"] == grpo.load_grpo_config()["trainer"]["max_completion_length"]
 
 
 def test_risk_table_multiplies_sampled_propensity_and_fpr(tmp_path):
     fpr = tmp_path / "fpr.csv"
-    pd.DataFrame([{"judge": "j", "family": "gibberish", "fpr": 0.5}, {"judge": "j", "family": "simple_words", "fpr": 0.1},
-                  {"judge": "j", "family": "gibberish_placeholder", "fpr": 0.9}]).to_csv(fpr, index=False)
+    pd.DataFrame(
+        [
+            {"judge": "j", "family": "gibberish", "fpr": 0.5},
+            {"judge": "j", "family": "simple_words", "fpr": 0.1},
+            {"judge": "j", "family": "gibberish_placeholder", "fpr": 0.9},
+        ]
+    ).to_csv(fpr, index=False)
     prop = pd.DataFrame([{"pool": "hard", "family": "gibberish", "count": 1, "n": 100, "p_hat": 0.01},
                          {"pool": "hard", "family": "simple_words", "count": 9, "n": 100, "p_hat": 0.1}])
     r = risk_table(prop, fpr)
@@ -208,4 +229,6 @@ def test_risk_only_recomputes_from_the_saved_propensity(tmp_path, monkeypatch):
     subprocess.run([sys.executable, "-m", "src.audit.sampled_propensity", "--risk-only", "--run-dir", str(d),
                     "--fpr", str(fpr)], check=True, capture_output=True)
     r = pd.read_csv(d / "risk_scores.csv")
-    assert sorted(r["judge"]) == ["a", "b"] and r.set_index("judge")["risk"].to_dict() == pytest.approx({"a": 0.05, "b": 0.02})
+    assert sorted(r["judge"]) == ["a", "b"] and r.set_index("judge")["risk"].to_dict() == pytest.approx(
+        {"a": 0.05, "b": 0.02}
+    )

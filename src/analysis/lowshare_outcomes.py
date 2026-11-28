@@ -84,8 +84,15 @@ def outcome(pred, run_dir):
             row[f"hit_{score}"] = winner in str(pred[col]).split("+")
         winner_exposure = pred.get(f"exposure:{winner}", np.nan)
         rew, sampled = rewarded_before(run_dir, winner, step)
-        row.update({"rewarded_before": rew, "sampled_before": sampled,
-                    "rate_over_exposure": rew / (step * winner_exposure) if winner_exposure and winner_exposure > 0 else np.nan})
+        row.update(
+            {
+                "rewarded_before": rew,
+                "sampled_before": sampled,
+                "rate_over_exposure": rew / (step * winner_exposure)
+                if winner_exposure and winner_exposure > 0
+                else np.nan,
+            }
+        )
     rise = largest_rise(run_dir, seeded)
     final = final_rates(run_dir, seeded)
     for fam in seeded:

@@ -38,9 +38,21 @@ def vllm_cli_args(kwargs):
 def server_command(cfg, port=8100, gpu_memory_utilization=0.2):
     max_model_len = max(4096, cfg["max_new_tokens"] + PROMPT_ROOM)
     dtype = "auto" if cfg.get("quantized") else "bfloat16"
-    return (["vllm", "serve", cfg["model"], "--port", str(port), "--gpu-memory-utilization", str(gpu_memory_utilization),
-             "--max-model-len", str(max_model_len), "--dtype", dtype, "--seed", "0"]
-            + vllm_cli_args(cfg.get("vllm_kwargs", {})))
+    return [
+        "vllm",
+        "serve",
+        cfg["model"],
+        "--port",
+        str(port),
+        "--gpu-memory-utilization",
+        str(gpu_memory_utilization),
+        "--max-model-len",
+        str(max_model_len),
+        "--dtype",
+        dtype,
+        "--seed",
+        "0",
+    ] + vllm_cli_args(cfg.get("vllm_kwargs", {}))
 
 
 class ServerJudge:
@@ -101,7 +113,9 @@ def main():
     pre.add_argument("--gpu-test", action="store_true")
     known, _ = pre.parse_known_args()
     server_cfg = load_grpo_config(profile="gpu_test" if known.gpu_test else None)["judge_server"]
-    ap = argparse.ArgumentParser(description="Print the `vllm serve` command for a judge (used by scripts/run_grpo.sh).")
+    ap = argparse.ArgumentParser(
+        description="Print the `vllm serve` command for a judge (used by scripts/run_grpo.sh)."
+    )
     ap.add_argument("--judge", required=True)
     ap.add_argument("--gpu-test", action="store_true", help="read judge_server from the gpu_test overrides")
     ap.add_argument("--port", type=int, default=urlparse(server_cfg["url"]).port)

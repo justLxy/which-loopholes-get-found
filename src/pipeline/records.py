@@ -19,8 +19,8 @@ Derived fields:
 import json
 import platform
 import subprocess
-from importlib import metadata
 from datetime import datetime, timezone
+from importlib import metadata
 from pathlib import Path
 
 SCHEMA_VERSION = 2   # 2: adds request_seed and separate sample records

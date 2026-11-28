@@ -43,8 +43,12 @@ PROTOCOL = ROOT / "configs" / "protocol.yaml"
 STRING_FPR = "results/stage2/string_fpr.csv"
 RUN_FILES = ("summary.txt", "eval_summary.jsonl", "events_tau0.05.json", "predicted_risk.csv", "train_metrics.jsonl",
              "meta.json", "meta_end.json", "gpu.txt")
-CHECKPOINT_FILES = {"data_summary.json": "data_summary.json", "propensity/propensity_sampled.csv": "propensity_sampled.csv",
-                    "propensity/risk_scores.csv": "risk_scores.csv", "likelihood/propensity.csv": "likelihood.csv"}
+CHECKPOINT_FILES = {
+    "data_summary.json": "data_summary.json",
+    "propensity/propensity_sampled.csv": "propensity_sampled.csv",
+    "propensity/risk_scores.csv": "risk_scores.csv",
+    "likelihood/propensity.csv": "likelihood.csv",
+}
 
 
 def load_plan(protocol=PROTOCOL, seeds=None):
@@ -94,13 +98,44 @@ def checkpoint_steps(ck):
     build += ["--rotation", str(ck["rotation"])] if ck["seeding"] == "rotated" else ["--seeding", ck["seeding"]]
     return [
         ("seeding set", f"{d}/data.jsonl", build, False),
-        ("SFT", f"{d}/model/config.json", py + ["src.train.sft", "--name", ck["name"], "--seed", str(ck["seed"])], False),
-        ("sampled propensity", f"{d}/propensity/risk_scores.csv",
-         py + ["src.audit.sampled_propensity", "--policy", f"{d}/model", "--run-dir", f"{d}/propensity", "--fpr", STRING_FPR],
-         False),
-        ("string likelihood", f"{d}/likelihood/propensity.csv",
-         py + ["src.audit.likelihood", "--policy", f"{d}/model", "--run-dir", f"{d}/likelihood", "--difficulty-run", "none",
-               "--fpr", STRING_FPR], True),
+        (
+            "SFT",
+            f"{d}/model/config.json",
+            py + ["src.train.sft", "--name", ck["name"], "--seed", str(ck["seed"])],
+            False,
+        ),
+        (
+            "sampled propensity",
+            f"{d}/propensity/risk_scores.csv",
+            py
+            + [
+                "src.audit.sampled_propensity",
+                "--policy",
+                f"{d}/model",
+                "--run-dir",
+                f"{d}/propensity",
+                "--fpr",
+                STRING_FPR,
+            ],
+            False,
+        ),
+        (
+            "string likelihood",
+            f"{d}/likelihood/propensity.csv",
+            py
+            + [
+                "src.audit.likelihood",
+                "--policy",
+                f"{d}/model",
+                "--run-dir",
+                f"{d}/likelihood",
+                "--difficulty-run",
+                "none",
+                "--fpr",
+                STRING_FPR,
+            ],
+            True,
+        ),
     ]
 
 
@@ -259,9 +294,17 @@ def main():
     done = sum(run_state(r) == "done" for r in runs)
     log(f"queue finished: {done}/{len(runs)} runs done; failures: {failures or 'none'}")
     (ROOT / "results" / "main").mkdir(parents=True, exist_ok=True)
-    (ROOT / "results" / "main" / "queue_state.json").write_text(json.dumps(
-        {"done": done, "runs": len(runs), "failures": failures, "finished": datetime.now().isoformat(timespec="seconds")},
-        indent=2))
+    (ROOT / "results" / "main" / "queue_state.json").write_text(
+        json.dumps(
+            {
+                "done": done,
+                "runs": len(runs),
+                "failures": failures,
+                "finished": datetime.now().isoformat(timespec="seconds"),
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

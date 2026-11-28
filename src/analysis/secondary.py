@@ -200,7 +200,9 @@ def km_tables(u, seeding):
                      **dict(zip([f"step_{a}" for a in KM_STEPS], km(r["cs_time"], has)))})
     tiers = []
     core = u[u["group"] == "core"].copy()
-    core["tier"] = [tier_shares(seeding["tiers"], s, seeding["group_seed"])[f] for f, s in zip(core["family"], core["seed"])]
+    core["tier"] = [
+        tier_shares(seeding["tiers"], s, seeding["group_seed"])[f] for f, s in zip(core["family"], core["seed"])
+    ]
     for tier, g in core.groupby("tier"):
         tiers.append({"tier": tier, "units": len(g), "first_events": int(g["cs_event"].sum()),
                       **dict(zip([f"step_{a}" for a in KM_STEPS], km(g["cs_time"], g["cs_event"])))})
@@ -288,8 +290,10 @@ def growth_table(u, n_boot, seed):
             rng, boot, sample = np.random.default_rng(seed), [], resampler(g)
             for _ in range(n_boot):
                 b = sample(rng)
-                boot.append([spearman(b["growth"], b[c]) for c in ("log_r", "log_fpr", "log_p")]
-                            + [spearman(b["growth"], b["log_r"]) - spearman(b["growth"], b[c]) for c in ("log_fpr", "log_p")])
+                boot.append(
+                    [spearman(b["growth"], b[c]) for c in ("log_r", "log_fpr", "log_p")]
+                    + [spearman(b["growth"], b["log_r"]) - spearman(b["growth"], b[c]) for c in ("log_fpr", "log_p")]
+                )
             boot = np.array(boot)
             names = ["rho_log_r", "rho_log_fpr", "rho_log_p", "rho_r_minus_fpr", "rho_r_minus_p"]
             for k, name in enumerate(names):
@@ -362,7 +366,9 @@ def main():
     write_meta(out, name="meta_secondary.json", stage="secondary_analyses", n_boot=args.boot, seed=args.seed,
                first_events={r: list(v) for r, v in sorted(firsts.items())})
 
-    fmt = lambda x: f"{x:.3g}"
+    def fmt(x):
+        return f"{x:.3g}"
+
     with pd.option_context("display.width", 250, "display.max_columns", 40, "display.max_colwidth", 60):
         print("1. Time to a run's first event (Kaplan-Meier, share of runs with an event by step):")
         print(km_runs.to_string(index=False, float_format=fmt))
@@ -375,7 +381,11 @@ def main():
                 "r2_log_p", "r2_both", "b_log_fpr", "b_log_p"]
         print(eg[cols].to_string(index=False, float_format=fmt))
         ci = eg[eg["analysis"].str.endswith("pooled")]
-        print(ci[["analysis"] + [c for c in eg.columns if c.endswith(("_ci_low", "_ci_high"))]].to_string(index=False, float_format=fmt))
+        print(
+            ci[["analysis"] + [c for c in eg.columns if c.endswith(("_ci_low", "_ci_high"))]].to_string(
+                index=False, float_format=fmt
+            )
+        )
         print("\n3. Winner conditional logit:")
         print(logit.to_string(index=False, float_format=fmt))
     print(f"\nwrote km_runs.csv, km_tiers.csv, cox.csv, early_growth.csv, winner_logit.csv to {display_path(out)}")

@@ -166,7 +166,10 @@ def main():
     print(f"population by stratum: {population}")
     print(f"sampled: {dict(Counter(it['stratum'] for it in items))}; "
           f"assigned: {dict(Counter(it['assigned_to'] for it in items))}")
-    print(f"labeler files: {display_path(SHEET_DIR / 'gold_audit_sheet.csv')}, {display_path(SHEET_DIR / 'gold_audit.html')}")
+    print(
+        f"labeler files: {display_path(SHEET_DIR / 'gold_audit_sheet.csv')}, "
+        f"{display_path(SHEET_DIR / 'gold_audit.html')}"
+    )
     print(f"answer key (do not share with labelers): {display_path(KEY_DIR / 'key.csv')}")
 
 

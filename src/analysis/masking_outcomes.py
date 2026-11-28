@@ -122,12 +122,20 @@ def main():
     outcomes = pd.DataFrame([outcome_row(cfg, r, predictions.loc[queue.run_name(r)], results, main_winners)
                              for r in runs])
     hits = outcomes["hit"].fillna(False).astype(bool)
-    summary = [{"analysis": "masked runs", "n": len(outcomes), "with_event": int(outcomes["event"].sum()),
-                "winner_predicted_by_exposure": int(hits.sum()),
-                "step_in_band_when_predicted": int(outcomes.loc[hits, "in_band"].sum()),
-                "winner_predicted_by_fpr_alone": int((outcomes["winner"] == outcomes["fpr_alone_predicted"]).sum()),
-                "winner_predicted_by_propensity_alone": int((outcomes["winner"] == outcomes["propensity_alone_predicted"]).sum()),
-                "winner_first_by_difficulty_score": int((outcomes["rank_difficulty"] == 1).sum())}]
+    summary = [
+        {
+            "analysis": "masked runs",
+            "n": len(outcomes),
+            "with_event": int(outcomes["event"].sum()),
+            "winner_predicted_by_exposure": int(hits.sum()),
+            "step_in_band_when_predicted": int(outcomes.loc[hits, "in_band"].sum()),
+            "winner_predicted_by_fpr_alone": int((outcomes["winner"] == outcomes["fpr_alone_predicted"]).sum()),
+            "winner_predicted_by_propensity_alone": int(
+                (outcomes["winner"] == outcomes["propensity_alone_predicted"]).sum()
+            ),
+            "winner_first_by_difficulty_score": int((outcomes["rank_difficulty"] == 1).sum()),
+        }
+    ]
     summary += pooled(outcomes, main_ranks)
     outcomes.to_csv(out / "masking_outcomes.csv", index=False)
     pd.DataFrame(summary).to_csv(out / "masking_summary.csv", index=False)

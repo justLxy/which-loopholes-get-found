@@ -154,7 +154,11 @@ def main():
         line = {"variant": variant, "runs": analysis, "events": r["events"], "risk AUROC": r["auroc"]}
         for s in SCORES[1:]:
             b = table[(table["variant"] == variant) & (table["analysis"] == analysis) & (table["score"] == s)].iloc[0]
-            p = "" if pd.isna(b["p_two_sided"]) else ("p<%g" % floor if b["p_two_sided"] < floor else f"p={b['p_two_sided']:.4f}")
+            p = (
+                ""
+                if pd.isna(b["p_two_sided"])
+                else ("p<%g" % floor if b["p_two_sided"] < floor else f"p={b['p_two_sided']:.4f}")
+            )
             line[f"minus {s}"] = "" if pd.isna(b["risk_minus_score"]) else \
                 f"{b['risk_minus_score']:+.3f} ({b['diff_ci_low']:+.3f}, {b['diff_ci_high']:+.3f}) {p}"
         lines.append(line)

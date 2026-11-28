@@ -59,11 +59,14 @@ def analyse(records, levels):
         correct[r["uid"]] += r["gold_correct"]
     trunc_uids = {r["uid"] for r in trunc}
     return {
-        "responses": len(records), "truncated": len(trunc),
+        "responses": len(records),
+        "truncated": len(trunc),
         "by_source": {k: f"{v[0]}/{v[1]} ({v[0] / v[1]:.1%})" for k, v in sorted(by_source.items())},
         "by_math_level": {k: f"{v[0]}/{v[1]} ({v[0] / v[1]:.1%})" for k, v in sorted(by_level.items())},
         "loop_share": sum(x < LOOP_RATIO for x in ratios) / max(len(ratios), 1),
-        "tail_ratio_quartiles": [round(ratios[int(q * (len(ratios) - 1))], 3) for q in (0.25, 0.5, 0.75)] if ratios else [],
+        "tail_ratio_quartiles": [round(ratios[int(q * (len(ratios) - 1))], 3) for q in (0.25, 0.5, 0.75)]
+        if ratios
+        else [],
         "already_boxed": sum(r["n_boxed"] > 0 for r in trunc),
         "correct_despite_truncation": sum(r["gold_correct"] for r in trunc),
         "problems_with_truncation": len(trunc_uids),

@@ -3,8 +3,16 @@ from pathlib import Path
 import pytest
 
 from src.analysis.stats import wilson_interval
-from src.audit.fpr import (HUANG_FAMILIES, MASTER_KEY_OPENERS, PLACEHOLDER, audit_one, build_items,
-                           judge_overview, report, summarize)
+from src.audit.fpr import (
+    HUANG_FAMILIES,
+    MASTER_KEY_OPENERS,
+    PLACEHOLDER,
+    audit_one,
+    build_items,
+    judge_overview,
+    report,
+    summarize,
+)
 from src.judges.local import JudgeResult
 from src.judges.parse import parse_verdict
 from src.judges.prompts import judge_answer

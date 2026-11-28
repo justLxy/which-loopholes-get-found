@@ -1,0 +1,5 @@
+ruff==0.17.6
+pytest-cov
+nbconvert
+ipykernel
+matplotlib

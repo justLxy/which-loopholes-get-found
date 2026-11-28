@@ -40,7 +40,6 @@ Writes run_level_winners.csv, run_level_tests.csv, event_timing.csv, difficulty_
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 import numpy as np
@@ -52,8 +51,8 @@ from src.analysis.primary import auroc, average_ranks, interval, paired_diff, tw
 from src.analysis.secondary import first_events, spearman
 from src.analysis.stats import binomial_two_sided
 from src.paths import ROOT, display_path
-from src.train.queue import PROTOCOL
 from src.pipeline.records import write_meta
+from src.train.queue import PROTOCOL
 
 SCORES = ("exposure", "fpr", "p_hat")
 
@@ -224,8 +223,11 @@ def bootstrap_auroc(units, col, n_boot, seed=0):
 def difficulty_auroc(u, n_boot, seed, positive_control):
     """AUROC and 95% interval of the difficulty-aware score for the pooled analyses of Figure 5."""
     core = u[u["group"] == "core"]
-    sets = (("core pooled", core), ("core pooled without the positive control", core[core["judge"] != positive_control]),
-            ("held-out pooled", u[u["group"] == "held_out"]))
+    sets = (
+        ("core pooled", core),
+        ("core pooled without the positive control", core[core["judge"] != positive_control]),
+        ("held-out pooled", u[u["group"] == "held_out"]),
+    )
     rows = []
     for label, g in sets:
         lo, hi, n = interval(bootstrap_auroc(g, "difficulty", n_boot, seed))
@@ -301,7 +303,11 @@ def summary_rows(u, firsts, ranks):
                     f"sign_p_{base}": binomial_two_sided(hi, hi + lo)})
     rows.append(row)
     runs = run_table(u)
-    for label, g in (("seeded", runs), ("core", runs[runs["group"] == "core"]), ("hard pool", runs[runs["pool"] == "hard"])):
+    for label, g in (
+        ("seeded", runs),
+        ("core", runs[runs["group"] == "core"]),
+        ("hard pool", runs[runs["pool"] == "hard"]),
+    ):
         rows.append({"analysis": f"run-level AUROC of the top score, {label}", "n": len(g),
                      "runs_with_event": int(g["event"].sum()),
                      **{f"auroc_{s}": auroc(g[f"top_{s}"], g["event"]) for s in SCORES}})
@@ -347,17 +353,22 @@ def main():
     write_meta(out, name="meta_run_level.json", stage="run_level_checks", n_boot=args.boot, seed=args.seed,
                min_n=args.min_n)
 
-    fmt = lambda x: f"{x:.4g}"
+    def fmt(x):
+        return f"{x:.4g}"
+
     with pd.option_context("display.width", 220, "display.max_columns", 40):
         print(ranks.to_string(index=False))
         for _, r in tests.iterrows():
             print("\n" + r["analysis"] + ": " + ", ".join(f"{k} {fmt(v) if isinstance(v, float) else v}"
                                                          for k, v in r.drop("analysis").dropna().items()))
         print("\n" + diff_auroc.to_string(index=False, float_format=fmt))
-        print(f"\npool acceptance, first 10 steps, {len(acc)} judge x family pairs: hard "
-              f"{acc['accepted_hard'].sum() / acc['n_hard'].sum():.3f}, easy {acc['accepted_easy'].sum() / acc['n_easy'].sum():.3f}; "
-              f"hard higher in {int((acc['accept_hard'] > acc['accept_easy']).sum())}, easy higher in "
-              f"{int((acc['accept_easy'] > acc['accept_hard']).sum())}")
+        print(
+            f"\npool acceptance, first 10 steps, {len(acc)} judge x family pairs: hard "
+            f"{acc['accepted_hard'].sum() / acc['n_hard'].sum():.3f}, easy "
+            f"{acc['accepted_easy'].sum() / acc['n_easy'].sum():.3f}; "
+            f"hard higher in {int((acc['accept_hard'] > acc['accept_easy']).sum())}, easy higher in "
+            f"{int((acc['accept_easy'] > acc['accept_hard']).sum())}"
+        )
     print(f"\nwrote run_level_winners.csv, run_level_tests.csv, event_timing.csv, difficulty_auroc.csv, "
           f"pool_acceptance.csv to {display_path(out)}")
 

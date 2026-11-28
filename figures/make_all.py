@@ -4,8 +4,7 @@ Every figure needs only matplotlib. Figure 1 (figures/gen_fig_summary.py) replac
 the TikZ overview.
 """
 
-from figures import (gen_fig_auroc, gen_fig_fpr_heatmap, gen_fig_h1, gen_fig_h2_h3, gen_fig_prospective,
-                     gen_fig_summary)
+from figures import gen_fig_auroc, gen_fig_fpr_heatmap, gen_fig_h1, gen_fig_h2_h3, gen_fig_prospective, gen_fig_summary
 
 if __name__ == "__main__":
     for module in (gen_fig_summary, gen_fig_fpr_heatmap, gen_fig_h1, gen_fig_auroc, gen_fig_prospective,

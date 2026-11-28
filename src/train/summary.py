@@ -46,10 +46,12 @@ def summarize(run_dir):
     if logs:
         times = [r["step_time"] for r in logs]
         later = times[1:] or times
-        lines.append(f"steps {logs[-1]['step']}: step time median {statistics.median(later):.1f}s "
-                     f"(first step {times[0]:.1f}s), mean reward {statistics.mean(r.get('reward', 0) for r in logs):.3f}, "
-                     f"mean completion length {statistics.mean(r.get('completions/mean_length', 0) for r in logs):.0f}, "
-                     f"clipped {statistics.mean(r.get('completions/clipped_ratio', 0) for r in logs):.3f}")
+        lines.append(
+            f"steps {logs[-1]['step']}: step time median {statistics.median(later):.1f}s "
+            f"(first step {times[0]:.1f}s), mean reward {statistics.mean(r.get('reward', 0) for r in logs):.3f}, "
+            f"mean completion length {statistics.mean(r.get('completions/mean_length', 0) for r in logs):.0f}, "
+            f"clipped {statistics.mean(r.get('completions/clipped_ratio', 0) for r in logs):.3f}"
+        )
     if metrics:
         judge_s = [m["judge_seconds"] for m in metrics]
         lines.append(f"judge: {statistics.mean(judge_s):.1f}s per batch of {metrics[0]['n']}, parse failures "

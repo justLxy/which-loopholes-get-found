@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from figures.style import OKABE, TEXT, ACCENT, save, setup
+from figures.style import ACCENT, OKABE, TEXT, save, setup
 from src.paths import ROOT
 
 JUDGE_SHORT = {"r1_distill_verifier_1p5b": "R1-Verifier", "qwen2p5_math_1p5b_instruct": "Qwen-Math"}
@@ -25,13 +25,25 @@ NOTE = dict(fontsize=7, color="#444444")
 
 def rows():
     analysis = ROOT / "results" / "analysis"
-    m = pd.read_csv(analysis / "masking_outcomes.csv").sort_values(["hit", "judge", "seed"], ascending=[False, True, True])
+    m = pd.read_csv(analysis / "masking_outcomes.csv").sort_values(
+        ["hit", "judge", "seed"], ascending=[False, True, True]
+    )
     low = pd.read_csv(analysis / "lowshare_outcomes.csv").sort_values(["setting", "seed"])
     out = [{"label": f"{JUDGE_SHORT[r['judge']]} s{r['seed']}, {MASK_SHORT[r['masked']]} masked", "group": "masking",
             "low": r["step_low"], "centre": r["predicted_step"], "high": r["step_high"], "step": r["step"],
             "hit": bool(r["hit"])} for _, r in m.iterrows()]
-    out += [{"label": f"{r['setting']}, seed {r['seed']}", "group": "low share", "low": r["step_low"], "centre": r["step_pred"],
-             "high": r["step_high"], "step": r["step"], "hit": bool(r["hit_exposure"])} for _, r in low.iterrows()]
+    out += [
+        {
+            "label": f"{r['setting']}, seed {r['seed']}",
+            "group": "low share",
+            "low": r["step_low"],
+            "centre": r["step_pred"],
+            "high": r["step_high"],
+            "step": r["step"],
+            "hit": bool(r["hit_exposure"]),
+        }
+        for _, r in low.iterrows()
+    ]
     return pd.DataFrame(out)
 
 

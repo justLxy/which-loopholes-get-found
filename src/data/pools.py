@@ -93,8 +93,10 @@ def describe(manifest, candidates):
         lvl = Counter(candidates[u]["level"] for u in uids if candidates[u]["source"] == "math_train")
         acc = sum(manifest["n_correct"][u] for u in uids) / (len(uids) * manifest["n_samples"])
         corr = Counter(manifest["n_correct"][u] for u in uids)
-        lines.append(f"{name}: train {len(splits['train'])}, eval {len(splits['eval'])}, audit {len(splits['audit'])} | "
-                     f"base accuracy {acc:.3f} | correct counts {dict(sorted(corr.items()))}")
+        lines.append(
+            f"{name}: train {len(splits['train'])}, eval {len(splits['eval'])}, audit {len(splits['audit'])} | "
+            f"base accuracy {acc:.3f} | correct counts {dict(sorted(corr.items()))}"
+        )
         lines.append(f"  sources {dict(src)} | MATH levels {dict(sorted(lvl.items()))}")
     return "\n".join(lines)
 

@@ -6,13 +6,11 @@ import shutil
 import numpy as np
 import pandas as pd
 import pytest
-import yaml
 
 from src.analysis import lowshare_outcomes
 from src.detectors import FAMILIES
 from src.paths import ROOT
 from src.train import lowshare, seed_data
-
 
 # ----------------------------------------------------------------------------- seeding
 
@@ -218,8 +216,10 @@ def test_bootstrap_is_reproducible(root):
 def test_predictions_use_the_fallback_only_when_the_primary_fails(root):
     cfg, cks = lowshare.load_plan()
     f1, f2 = cks[0], cks[1]
-    fake_checkpoint(root, cfg, f1, {"adversarial_prefixes": 0.012, "answer_explanation": 0.016})        # fails
-    fake_checkpoint(root, cfg, lowshare.fallback_of(cfg, f1), {"adversarial_prefixes": 0.023, "answer_explanation": 0.007})
+    fake_checkpoint(root, cfg, f1, {"adversarial_prefixes": 0.012, "answer_explanation": 0.016})  # fails
+    fake_checkpoint(
+        root, cfg, lowshare.fallback_of(cfg, f1), {"adversarial_prefixes": 0.023, "answer_explanation": 0.007}
+    )
     fake_checkpoint(root, cfg, f2, {"empty_symbols": 0.021, "reasoning_opener": 0.008})                  # passes
     table, (a, b, sd) = lowshare.prediction_table(cfg, cks, root)
     assert list(table["checkpoint"]) == ["low-F1-s0b", "low-F2-s0"]
@@ -330,19 +330,40 @@ def fake_run(path, e, events, counts):
 
 
 def prediction(run, setting, baseline, exp_fav, fpr_fav, prop_fav, shares, exposures, fprs=None):
-    return pd.Series({"run": run, "setting": setting, "baseline": baseline, "seed": 0, "checkpoint": f"low-{setting}-s0",
-                      "fallback": False, "judge": "j", "q0": 0.2, "exposure_favourite": exp_fav, "exposure_top": 3.3,
-                      "fpr_alone_favourite": fpr_fav, "propensity_alone_favourite": prop_fav, "ea_favourite": exp_fav,
-                      "step_low": 45.0, "step_high": 160.0, "step": 85.0, "shares": shares,
-                      **{f"exposure:{k}": v for k, v in exposures.items()},
-                      **{f"fpr:{k}": v for k, v in (fprs or {}).items()}})
+    return pd.Series(
+        {
+            "run": run,
+            "setting": setting,
+            "baseline": baseline,
+            "seed": 0,
+            "checkpoint": f"low-{setting}-s0",
+            "fallback": False,
+            "judge": "j",
+            "q0": 0.2,
+            "exposure_favourite": exp_fav,
+            "exposure_top": 3.3,
+            "fpr_alone_favourite": fpr_fav,
+            "propensity_alone_favourite": prop_fav,
+            "ea_favourite": exp_fav,
+            "step_low": 45.0,
+            "step_high": 160.0,
+            "step": 85.0,
+            "shares": shares,
+            **{f"exposure:{k}": v for k, v in exposures.items()},
+            **{f"fpr:{k}": v for k, v in (fprs or {}).items()},
+        }
+    )
 
 
 def test_outcome_scores_the_first_event_against_each_favourite(tmp_path):
     e = {0: {"adversarial_prefixes": 0.0, "answer_explanation": 0.0}, 10: {"adversarial_prefixes": 0.02},
          60: {"adversarial_prefixes": 0.3, "answer_explanation": 0.01}, 70: {"adversarial_prefixes": 0.5}}
-    fake_run(tmp_path / "r", e, {"adversarial_prefixes": 60},
-             [(0, "adversarial_prefixes", 5, 3), (30, "adversarial_prefixes", 20, 12), (60, "adversarial_prefixes", 80, 50)])
+    fake_run(
+        tmp_path / "r",
+        e,
+        {"adversarial_prefixes": 60},
+        [(0, "adversarial_prefixes", 5, 3), (30, "adversarial_prefixes", 20, 12), (60, "adversarial_prefixes", 80, 50)],
+    )
     pred = prediction("r", "F1", "fpr", "adversarial_prefixes", "answer_explanation", "adversarial_prefixes",
                       "adversarial_prefixes=0.02;answer_explanation=0.01",
                       {"adversarial_prefixes": 3.3, "answer_explanation": 1.8})
@@ -373,7 +394,10 @@ def test_a_later_event_is_compared_with_the_winner_in_fpr(tmp_path):
 
 
 def test_outcome_without_an_event_keeps_the_threshold_free_rise(tmp_path):
-    e = {0: {"answer_explanation": 0.0, "reasoning_opener": 0.0}, 10: {"answer_explanation": 0.03, "reasoning_opener": 0.01}}
+    e = {
+        0: {"answer_explanation": 0.0, "reasoning_opener": 0.0},
+        10: {"answer_explanation": 0.03, "reasoning_opener": 0.01},
+    }
     fake_run(tmp_path / "r", e, {}, [])
     pred = prediction("r", "P1", "propensity", "answer_explanation", "answer_explanation", "reasoning_opener",
                       "answer_explanation=0.013;reasoning_opener=0.017",
@@ -383,19 +407,66 @@ def test_outcome_without_an_event_keeps_the_threshold_free_rise(tmp_path):
 
 
 def test_summary_pairs_exposure_with_each_baseline_by_run():
-    rows = pd.DataFrame([
-        {"baseline": "fpr", "event": True, "hit_exposure": True, "hit_fpr": False, "hit_propensity": True, "hit_ea": True,
-         "in_band": True, "rewarded_before": 500, "rise_favours_exposure": True, "step_ratio": 0.5,
-         "rate_over_exposure": 2.0, "later_events": "reasoning_opener@50", "later_fpr_above_winner": True},
-        {"baseline": "fpr", "event": True, "hit_exposure": True, "hit_fpr": False, "hit_propensity": True, "hit_ea": True,
-         "in_band": False, "rewarded_before": 700, "rise_favours_exposure": True, "step_ratio": 2.0,
-         "rate_over_exposure": 3.0, "later_events": "", "later_fpr_above_winner": np.nan},
-        {"baseline": "propensity", "event": True, "hit_exposure": False, "hit_fpr": False, "hit_propensity": True,
-         "hit_ea": False, "in_band": True, "rewarded_before": 300, "rise_favours_exposure": False, "step_ratio": 1.0,
-         "rate_over_exposure": 1.0, "later_events": np.nan, "later_fpr_above_winner": np.nan},
-        {"baseline": "propensity", "event": False, "hit_exposure": None, "hit_fpr": None, "hit_propensity": None,
-         "hit_ea": None, "in_band": None, "rewarded_before": np.nan, "rise_favours_exposure": True},
-    ])
+    rows = pd.DataFrame(
+        [
+            {
+                "baseline": "fpr",
+                "event": True,
+                "hit_exposure": True,
+                "hit_fpr": False,
+                "hit_propensity": True,
+                "hit_ea": True,
+                "in_band": True,
+                "rewarded_before": 500,
+                "rise_favours_exposure": True,
+                "step_ratio": 0.5,
+                "rate_over_exposure": 2.0,
+                "later_events": "reasoning_opener@50",
+                "later_fpr_above_winner": True,
+            },
+            {
+                "baseline": "fpr",
+                "event": True,
+                "hit_exposure": True,
+                "hit_fpr": False,
+                "hit_propensity": True,
+                "hit_ea": True,
+                "in_band": False,
+                "rewarded_before": 700,
+                "rise_favours_exposure": True,
+                "step_ratio": 2.0,
+                "rate_over_exposure": 3.0,
+                "later_events": "",
+                "later_fpr_above_winner": np.nan,
+            },
+            {
+                "baseline": "propensity",
+                "event": True,
+                "hit_exposure": False,
+                "hit_fpr": False,
+                "hit_propensity": True,
+                "hit_ea": False,
+                "in_band": True,
+                "rewarded_before": 300,
+                "rise_favours_exposure": False,
+                "step_ratio": 1.0,
+                "rate_over_exposure": 1.0,
+                "later_events": np.nan,
+                "later_fpr_above_winner": np.nan,
+            },
+            {
+                "baseline": "propensity",
+                "event": False,
+                "hit_exposure": None,
+                "hit_fpr": None,
+                "hit_propensity": None,
+                "hit_ea": None,
+                "in_band": None,
+                "rewarded_before": np.nan,
+                "rise_favours_exposure": True,
+            },
+        ]
+    )
     s = lowshare_outcomes.summary(rows).set_index("scope")
     a = s.loc["all runs"]
     assert (a["runs"], a["runs_with_event"], a["exposure_correct"], a["events_in_band"]) == (4, 3, 2, 2)
@@ -413,7 +484,10 @@ def test_summary_pairs_exposure_with_each_baseline_by_run():
 def test_q0_items_follow_the_samples_and_carry_the_question():
     from src.audit import q0
     problems = {"a": {"problem": "1+1?", "reference": "2"}, "b": {"problem": "2+2?", "reference": "4"}}
-    samples = [{"uid": "b", "response": "{", "truncated": False}, {"uid": "a", "response": "\\boxed{2}", "truncated": True}]
+    samples = [
+        {"uid": "b", "response": "{", "truncated": False},
+        {"uid": "a", "response": "\\boxed{2}", "truncated": True},
+    ]
     items = q0.judge_items(samples, problems)
     assert [(i["question"], i["reference"], i["response"], i["truncated"]) for i in items] == \
         [("2+2?", "4", "{", False), ("1+1?", "2", "\\boxed{2}", True)]

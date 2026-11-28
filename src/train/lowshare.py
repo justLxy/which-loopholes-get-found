@@ -33,7 +33,6 @@ checkpoint on this machine has the committed propensity.
 """
 
 import argparse
-import json
 import math
 import subprocess
 import sys
@@ -51,8 +50,13 @@ from src.train import masking, queue
 PLAN = ROOT / "configs" / "lowshare.yaml"
 JEFFREYS = 0.5
 CLASSES = len(FAMILIES) + 1          # 14 families and "none", as in src.audit.likelihood.sampled_propensity
-CHECKPOINT_FILES = {"data_summary.json": "data_summary.json", "propensity/propensity_sampled.csv": "propensity_sampled.csv",
-                    "propensity/risk_scores.csv": "risk_scores.csv", "q0/judged.csv": "judged.csv", "q0/q0.json": "q0.json"}
+CHECKPOINT_FILES = {
+    "data_summary.json": "data_summary.json",
+    "propensity/propensity_sampled.csv": "propensity_sampled.csv",
+    "propensity/risk_scores.csv": "risk_scores.csv",
+    "q0/judged.csv": "judged.csv",
+    "q0/q0.json": "q0.json",
+}
 
 
 # ----------------------------------------------------------------------------- plan
@@ -78,7 +82,12 @@ def plan_checkpoints(cfg):
 
 
 def fallback_of(cfg, ck):
-    return {**ck, "name": ck["name"] + "b", "shares": dict(cfg["settings"][ck["setting"]]["fallback"]), "fallback": True}
+    return {
+        **ck,
+        "name": ck["name"] + "b",
+        "shares": dict(cfg["settings"][ck["setting"]]["fallback"]),
+        "fallback": True,
+    }
 
 
 def run_of(ck):
@@ -226,7 +235,9 @@ def bootstrap_stability(ck, data, favourite_exposure, n_boot, seed):
     nn, aa = n[idx].sum(1), acc[idx].sum(1)
     p = (c + JEFFREYS) / (nn[:, None] + JEFFREYS * CLASSES)
     q0 = aa / nn
-    f = rng.binomial(fpr["n"].to_numpy(int), fpr["fpr"].to_numpy(float), size=(n_boot, len(FAMILIES))) / fpr["n"].to_numpy(float)
+    f = rng.binomial(fpr["n"].to_numpy(int), fpr["fpr"].to_numpy(float), size=(n_boot, len(FAMILIES))) / fpr[
+        "n"
+    ].to_numpy(float)
     exposure = p * f
     ea = p * (f - q0[:, None]) / np.sqrt(q0 * (1 - q0))[:, None]
     base = f if ck["baseline"] == "fpr" else p
@@ -269,11 +280,13 @@ def check_checkpoint(cfg, ck, root=ROOT):
 
 def describe_check(row):
     failed = [k[3:] for k, v in row.items() if k.startswith("ok_") and not v]
-    return (f"check {row['checkpoint']}: exposure favourite {row['exposure_favourite']} at {row['exposure_top']:.2f} "
-            f"(runner-up {row['runner_up']} {row['runner_up_exposure']:.2f}, margin {row['margin']:.2f}), "
-            f"{row['baseline']} favourite {row['baseline_favourite']}, expected-advantage favourite {row['ea_favourite']}, "
-            f"q0 {row['q0']:.3f}, stability {row['stability']:.3f} -> "
-            + ("PASSED" if row["passed"] else "FAILED: " + ", ".join(failed)))
+    return (
+        f"check {row['checkpoint']}: exposure favourite {row['exposure_favourite']} at {row['exposure_top']:.2f} "
+        f"(runner-up {row['runner_up']} {row['runner_up_exposure']:.2f}, margin {row['margin']:.2f}), "
+        f"{row['baseline']} favourite {row['baseline_favourite']}, expected-advantage favourite {row['ea_favourite']}, "
+        f"q0 {row['q0']:.3f}, stability {row['stability']:.3f} -> "
+        + ("PASSED" if row["passed"] else "FAILED: " + ", ".join(failed))
+    )
 
 
 def check_table(cfg, cks, root=ROOT):
@@ -315,7 +328,14 @@ def prediction_table(cfg, cks, root=ROOT):
 
 def same_predictions(recorded, fresh):
     """True when both tables hold the same runs with the same checkpoints, favourites and top exposure (any order)."""
-    key = ["run", "checkpoint", "exposure_favourite", "fpr_alone_favourite", "propensity_alone_favourite", "ea_favourite"]
+    key = [
+        "run",
+        "checkpoint",
+        "exposure_favourite",
+        "fpr_alone_favourite",
+        "propensity_alone_favourite",
+        "ea_favourite",
+    ]
     if len(recorded) != len(fresh) or set(recorded["run"]) != set(fresh["run"]):
         return False
     a, b = recorded.sort_values("run").reset_index(drop=True), fresh.sort_values("run").reset_index(drop=True)
@@ -458,17 +478,21 @@ def main():
         recorded = read_predictions(out)
         pred = merge_predictions(recorded, fresh)
         write_predictions(out, pred, recorded)
-        print(f"timing fit over the main-run first events: log step = {a:.3f} {b:+.3f} log exposure, residual sd {sd:.3f}")
+        print(
+            f"timing fit over the main-run first events: log step = {a:.3f} {b:+.3f} log exposure, residual sd {sd:.3f}"
+        )
         cols = ["run", "checkpoint", "exposure_favourite", "exposure_top", "margin", "fpr_alone_favourite",
                 "propensity_alone_favourite", "ea_favourite", "q0", "stability", "step", "step_low", "step_high"]
         with pd.option_context("display.width", 240, "display.max_columns", 30):
             print(pred[cols].to_string(index=False, float_format=lambda x: f"{x:.3g}"))
         missing = len(cks) - len(pred)
         added = len(pred) - (0 if recorded is None else len(recorded))
-        print(f"wrote {display_path(out)} with {len(pred)} runs ({added} new"
-              + (", the recorded ones unchanged)" if recorded is not None else ")")
-              + (f"; {missing} setting-seed pairs have no checkpoint that passed and are not trained" if missing else "")
-              + "; commit and push it with the checkpoint files before the first new run")
+        print(
+            f"wrote {display_path(out)} with {len(pred)} runs ({added} new"
+            + (", the recorded ones unchanged)" if recorded is not None else ")")
+            + (f"; {missing} setting-seed pairs have no checkpoint that passed and are not trained" if missing else "")
+            + "; commit and push it with the checkpoint files before the first new run"
+        )
         return
 
     if args.pack_only:
