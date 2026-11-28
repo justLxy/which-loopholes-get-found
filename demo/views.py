@@ -20,8 +20,8 @@ EVENT_RULE = ("An event means the family's rate of wrong but accepted answers ro
 PREREG_ABOUT = {
     "masking": "Experiment B, a masked run: a main run repeated with the same checkpoint, judge and seed, with "
                "**{fam}** rejected by rule in training and evaluation (paper Section 5 and Appendix D).",
-    "lowshare": "Experiment C, a low-share run: two families seeded at a total SFT share of about 3%, "
-                "setting {fam} (paper Section 5 and Table 5)."}
+    "lowshare": "Experiment C, a low-share run: two families seeded at a total SFT share of 3% in settings F1 "
+                "and F2 and 3.8% in P2, here setting {fam} (paper Section 5 and Table 5)."}
 PREREG_MISSING = ("The runs with recorded predictions are not in demo/data: rebuild it with "
                   "`python -m src.demo.build_data`.")
 
@@ -256,7 +256,7 @@ def check_own(store, table, q0):
     names = [str(f).strip() for f in t["family"]]
     if any(f in ("", "nan", "None") for f in names):
         raise InputError("a row has no family name")
-    dup =sorted({f for f in names if names.count(f) > 1})
+    dup = sorted({f for f in names if names.count(f) > 1})
     unknown = sorted(set(names) - set(store.families))
     missing = [f for f in store.families if f not in names]
     for problem, fams in (("listed more than once", dup), ("unknown", unknown), ("missing", missing)):

@@ -210,9 +210,14 @@ def build_prereg(out, runs_dir, results_root=ROOT / "results", analysis_dir=ROOT
     return prereg.to_dict("records")
 
 
+FIT_DIGITS = 14                     # significant digits kept of the timing fit in timing.json
+
+
 def timing_summary():
-    """Timing fit, z90 and level from src.audit.predict."""
+    """Timing fit, z90 and level from src.audit.predict. The fit is rounded to FIT_DIGITS significant digits: its
+    last digits depend on the linear algebra library, and the bundle should be the same on every platform."""
     (a, b, sd), level = predict.timing()
+    a, b, sd = (float(f"{x:.{FIT_DIGITS}g}") for x in (a, b, sd))
     return {"a": a, "b": b, "sd": sd, "z90": predict.Z90, "level": level, "step_samples": STEP_SAMPLES,
             "source": "src.audit.predict.timing(): src.train.masking.timing_fit on results/analysis/event_timing.csv"}
 
