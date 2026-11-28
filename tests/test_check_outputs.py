@@ -21,7 +21,8 @@ def test_identical_bytes():
 def test_last_digit_differences_are_close():
     new = HEAD.replace(b"0.9741760108732586", b"0.9741760108732581")
     status, detail = check_outputs.compare_csv(HEAD, new)
-    assert status == "close" and detail.startswith("largest absolute difference 5")
+    assert status == "close" and detail.startswith("largest absolute difference ")
+    assert 0 < float(detail.split()[-1]) < 1e-15          # the parsed difference varies by platform: 4.4e-16, 5.6e-16
 
 
 @pytest.mark.parametrize("old,new,where", [
