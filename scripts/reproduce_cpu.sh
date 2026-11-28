@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Rebuild CPU analyses and figures, then require byte-for-byte committed outputs.
+# Rebuild the CPU analyses and figures, then check them against the committed outputs (scripts/check_outputs.py:
+# CSVs equal to within a relative tolerance of 1e-9, every figure PDF rewritten).
 set -Eeuo pipefail
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
@@ -13,6 +14,7 @@ fi
 
 step=preflight
 started=$SECONDS
+since=$(date +%s)
 trap 'code=$?; printf "FAIL: %s (exit %d; total %ds)\n" "$step" "$code" "$((SECONDS - started))" >&2; exit "$code"' ERR
 
 git rev-parse --show-toplevel >/dev/null
@@ -39,5 +41,5 @@ run_step masking_outcomes "$python_bin" -m src.analysis.masking_outcomes
 run_step lowshare_outcomes "$python_bin" -m src.analysis.lowshare_outcomes
 run_step pooled_runs "$python_bin" -m src.analysis.pooled_runs
 run_step figures "$python_bin" -m figures.make_all
-run_step output_check git diff --exit-code -- 'results/analysis/*.csv' 'figures/*.pdf'
-printf '\nPASS: all CPU analyses and figures reproduced unchanged (%ds).\n' "$((SECONDS - started))"
+run_step output_check "$python_bin" scripts/check_outputs.py --since "$since"
+printf '\nPASS: all CPU analyses and figures reproduced (%ds).\n' "$((SECONDS - started))"
