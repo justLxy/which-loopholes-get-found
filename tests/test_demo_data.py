@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from src.audit import predict
-from src.demo.build_data import MAX_CHARS, PREREG_COLUMNS, build, build_prereg, top_responses, write_timing
+from src.demo.build_data import FIT_DIGITS, MAX_CHARS, PREREG_COLUMNS, build, build_prereg, top_responses, write_timing
 from src.detectors import FAMILIES
 from src.paths import ROOT
 from src.train.masking import Z90, timing_fit
@@ -145,8 +145,7 @@ def test_the_timing_fit_in_the_bundle_is_the_library_s(tmp_path):
     write_timing(tmp_path)
     t = json.loads((tmp_path / "timing.json").read_text())
     (a, b, sd), level = predict.timing()
-    assert (t["a"], t["b"], t["sd"], t["z90"], t["level"], t["step_samples"]) == (a, b, sd, predict.Z90, level, 256)
-    committed = json.loads((ROOT / "demo" / "data" / "timing.json").read_text())
-    assert committed.keys() == t.keys() and committed["source"] == t["source"]
-    for key in ("a", "b", "sd", "z90", "level", "step_samples"):
-        assert committed[key] == pytest.approx(t[key], rel=1e-12), key   # other numpy versions move the last digit
+    assert (t["z90"], t["level"], t["step_samples"]) == (predict.Z90, level, 256)
+    assert (t["a"], t["b"], t["sd"]) == pytest.approx((a, b, sd), rel=1e-13)
+    assert all(len(repr(t[k]).lstrip("-").replace(".", "").lstrip("0")) <= FIT_DIGITS for k in ("a", "b", "sd"))
+    assert json.loads((ROOT / "demo" / "data" / "timing.json").read_text()) == t     # the same on every platform

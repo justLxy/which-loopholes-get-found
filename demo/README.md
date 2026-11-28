@@ -3,7 +3,7 @@
 Interactive view of [the paper](https://arxiv.org/abs/2611.29651): before RL training, the **exposure
 (256 × p̂ × FPR)** of 14 hacking patterns predicts which one a policy learns first against an LLM judge.
 
-The app reads only `demo/data/` (committed, 4.3 MB). No GPU or model weights needed.
+The app reads only `demo/data/` (committed, 4.4 MB). No GPU or model weights needed.
 
 ## Install and run
 
@@ -90,7 +90,7 @@ AUROC of each score and the confirmatory tests.
 | step, 90% window | log step = 5.64 − 1.03 log exposure, ± 1.645 × 0.38 (`src/train/masking.py`) | [App. D](https://arxiv.org/html/2611.29651#A4.SS0.SSS0.Px8) |
 | level 1.92 | lowest exposure of any main-run event | [App. D](https://arxiv.org/html/2611.29651#A4.SS0.SSS0.Px2) |
 | q0, EA | judge acceptance of starting outputs; EA = p̂ (FPR − q0) / √(q0 (1 − q0)) | [App. D](https://arxiv.org/html/2611.29651#A4.SS0.SSS0.Px7) |
-| masked, low share | one family rejected by rule; two families seeded at about 3% | [§5](https://arxiv.org/html/2611.29651#S5.SS0.SSS0.Px7), [App. D](https://arxiv.org/html/2611.29651#A4.SS0.SSS0.Px9) |
+| masked, low share | one family rejected by rule; two families seeded at 3% (F1, F2) or 3.8% (P2) of the SFT set in total | [§5](https://arxiv.org/html/2611.29651#S5.SS0.SSS0.Px7), [App. D](https://arxiv.org/html/2611.29651#A4.SS0.SSS0.Px9) |
 
 ## Data bundle (`demo/data/`)
 
@@ -138,6 +138,13 @@ With pandas 3.0.6 and numpy 2.5.4, `demo/data` comes out unchanged. `--prereg-on
 and `timing.json`.
 
 ## Tests
+
+The tests run in the main environment (main README, "Setup") with `demo/requirements.txt` installed as well.
+`demo/requirements.txt` alone does not include pytest.
+
+```bash
+.venv/bin/pip install -r requirements.txt -r demo/requirements.txt
+```
 
 ```bash
 .venv/bin/python -m pytest -q tests/test_demo_app.py tests/test_demo_store.py tests/test_demo_data.py tests/test_predict.py
