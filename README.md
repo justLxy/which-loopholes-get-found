@@ -3,6 +3,7 @@
 [![Paper](https://img.shields.io/badge/Paper-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2611.29651)
 [![Eval logs](https://img.shields.io/badge/Eval_logs-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/justLxy/which-loopholes-get-found/releases/tag/eval-logs-v1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/justLxy/which-loopholes-get-found/tests.yml?branch=main&style=for-the-badge&label=Tests)](https://github.com/justLxy/which-loopholes-get-found/actions/workflows/tests.yml)
 
 Xuanyi Lyu, Yuezhou Zhao, Qing Qin
 
@@ -84,6 +85,7 @@ correct answer without a box). A blind audit of the flagged exploits is in `audi
 ## Repository structure
 
 ```
+.github/workflows/  CI: ruff and pytest on every push and pull request
 configs/            experiment configuration
   protocol.yaml     design fixed before the main runs (propensity, seeding, events, analysis, main runs)
   masking.yaml      experiment B (masked runs); lowshare.yaml: experiment C (low seeding share)
@@ -95,13 +97,15 @@ src/
   judges/           judge prompts, verdict parsing, local / vLLM / server judges, engineered judge
   policy/           policy prompt and samplers (local and vLLM)
   pipeline/         record format, sharded resumable runs, end-to-end smoke test
-  audit/            pre-RL audits: judge FPR, seeding-string FPR, static accuracy, propensity, likelihood
+  audit/            pre-RL audits: judge FPR, seeding-string FPR, static accuracy, propensity, likelihood;
+                    predict.py ranks the families of any judge before training
   train/            seeding set, SFT, GRPO trainer, evaluation callback, the queues of experiments A to C
   monitor/          event detection, the exploit hand audit
   analysis/         primary, confirmatory, secondary and sensitivity analyses; outcomes of experiments B
                     and C; pooled run-level and checkpoint-level tests
   demo/             builds the demo's data bundle
-scripts/            GPU machine setup, model download, single runs, Vast.ai auto-resume and auto-stop
+scripts/            GPU machine setup, model download, single runs, Vast.ai auto-resume and auto-stop,
+                    one-command CPU reproduction
 pools/              the difficulty pools (problem ids per pool and split)
 results/
   stage1/           judge FPR by family, static accuracy, base-policy propensity
@@ -111,7 +115,8 @@ results/
   lowshare/         experiment C: the 6 runs, every checkpoint's pre-run check, committed predictions
   analysis/         every analysis output (units, AUROC tables, tests, hazards, sensitivity, pooled tests)
 audits/             blind hand-audit sheets and labels (gold checker, exploits)
-demo/               Gradio app and its data bundle
+demo/               Gradio app (layout, views, data store), its data bundle and its README
+notebooks/          two analysis notebooks that read only committed files
 figures/            the paper's figures (PDF and PNG) and the scripts that draw them from results/
 tests/              unit and integration tests (pytest)
 ```
@@ -128,6 +133,10 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m pytest -q
 ```
+
+The demo and its integration tests also need `demo/requirements.txt`, and linting, coverage and the notebooks need
+`requirements-dev.txt`. CI installs the CPU build of PyTorch with all three files and runs `ruff check .` and
+`pytest`.
 
 GPU machine (one NVIDIA GPU with at least 80 GB; 96 GB to serve the 7B and 35B held-out judges beside
 training). `scripts/setup_gpu.sh` detects the platform (Vast.ai, GCP, AutoDL), installs
@@ -218,6 +227,13 @@ python -m src.analysis.pooled_runs          # CPU: run-level tests per experimen
 figure of the paper from the committed results (PDF with embedded fonts, sized for the ACL column and
 text widths). Every figure needs only matplotlib; Figure 1 is drawn by `figures/gen_fig_summary.py`.
 
+**6. Every CPU step in one command.** `bash scripts/reproduce_cpu.sh` reruns the analyses of step 4 except
+`src.analysis.descriptive`, the outcome analyses of experiments B and C, the pooled tests and the figures, and prints
+the time of each step. It then compares every CSV in `results/analysis/` with its committed version, with numbers
+equal to within a relative tolerance of 1e-9, and checks that every figure PDF was rewritten. The script needs
+`figures/requirements.txt`, takes two to three minutes on a laptop CPU and exits with a non-zero code if any output
+changed. `tests/test_key_numbers.py` pins the numbers of the Key results section to the committed tables.
+
 ## Experimental details
 
 | | |
@@ -261,8 +277,8 @@ otherwise.
 - `results/stage1/`, `results/stage2/`: judge FPRs by family and by seeding string, static accuracy.
 - `results/analysis/`: every unit of the analysis and every table reported above.
 - `audits/`: the blind hand-audit sheets, labels and scores.
-- `demo/data/`: a 3.8 MB bundle with the exposure tables, the trajectories of the 36 main runs and their most
-  frequent responses at each evaluation.
+- `demo/data/`: a 4.4 MB bundle with the exposure tables, the trajectories of all 46 runs, their most frequent
+  responses at each evaluation and the timing fit of the first-event step.
 - Release [`eval-logs-v1`](https://github.com/justLxy/which-loopholes-get-found/releases/tag/eval-logs-v1): the full evaluation outputs of all 46 runs (31 evaluations x 200 outputs per
   run, with the response, gold label, detected family and the judge's raw output and verdict), 103 MB compressed.
   The per-step summaries in `results/` were computed from them and match them exactly. Place each `eval.jsonl`
@@ -275,12 +291,30 @@ otherwise.
 .venv/bin/python demo/app.py              # then open http://127.0.0.1:7860
 ```
 
-**Before training** ranks the 14 families of a chosen judge, pool and starting policy by exposure (labeled
-"risk score" in the app), next to the ranking by FPR alone and what happened in the matching run. **During
-training** replays any of the 36 main runs: each family's exploitation rate, its share of the training responses, and the most
-frequent responses at each evaluation step. **Results** shows the numbers above. The app reads only
-`demo/data/`, so the `demo/` folder runs on its own. `python -m src.demo.build_data` rebuilds the bundle; it
-takes the sample responses from the evaluation logs of the release `eval-logs-v1`.
+The app has five tabs. **Before training** ranks the 14 families of a chosen judge, pool and starting policy by
+exposure, next to the ranking by FPR alone and what happened in the matching run. **During training** replays any of
+the 36 main runs: each family's exploitation rate, its share of the training responses, and the most frequent
+responses at each evaluation step. **Predictions recorded before training** sets the prediction for each masked and
+low-share run against its outcome. **Audit your own judge** ranks the families for FPRs and propensities that you
+enter and predicts the step of the first event with its 90% window. **Results** shows the numbers above. The app
+reads only `demo/data/`, so the `demo/` folder runs on its own. [`demo/README.md`](demo/README.md) describes each
+tab, the options `--host`, `--port` and `--data`, the files of the bundle and how to rebuild it.
+
+The same ranking is available on the command line, for our measurements or for CSV files with the columns
+`family,fpr` and `family,p_hat` (one row per family). The option `--q0` takes the judge's acceptance of the
+starting policy's outputs and adds the expected-advantage score.
+
+```bash
+python -m src.audit.predict --judge r1_distill_verifier_1p5b --checkpoint main-rot1 --pool hard
+python -m src.audit.predict --fpr my_fpr.csv --propensity my_p.csv --q0 0.2 --out ranking.csv
+```
+
+## Notebooks
+
+[`notebooks/01_audit_a_judge.ipynb`](notebooks/01_audit_a_judge.ipynb) audits one judge before training and
+compares its ranking with the matching run. [`notebooks/02_results_walkthrough.ipynb`](notebooks/02_results_walkthrough.ipynb)
+goes through the tables behind the key results and plots one trajectory. Both read only committed files and are
+saved with their outputs, and [`notebooks/README.md`](notebooks/README.md) explains how to run them.
 
 ## Troubleshooting
 

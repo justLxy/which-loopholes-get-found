@@ -3,7 +3,7 @@
 Interactive view of [the paper](https://arxiv.org/abs/2611.29651): before RL training, the **exposure
 (256 × p̂ × FPR)** of 14 hacking patterns predicts which one a policy learns first against an LLM judge.
 
-The app reads only `demo/data/` (committed, 4.3 MB). No GPU or model weights needed.
+The app reads only `demo/data/` (committed, 4.4 MB). No GPU or model weights needed.
 
 ## Install and run
 
