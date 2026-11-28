@@ -173,7 +173,7 @@ def parse_args(argv=None):
     return args
 
 
-def main(argv=None):
+def main(argv=None):  # pragma: no cover - real-model training entry point
     args = parse_args(argv)
     cfg = load_grpo_config(args.config, args.profile)
     if args.policy_model:
