@@ -47,7 +47,8 @@ jobs:
           python -m src.data.download_hacking
           python -m src.data.build_pool
 
-      # Add the Ruff check here after the complete R2 changes are merged.
+      - name: Lint with Ruff
+        run: python -m ruff check .
 
       - name: Run all tests, including demo and integration tests when present
         run: python -m pytest -q -rs
