@@ -159,6 +159,16 @@ def main():
     ap.add_argument("--string-fpr", default="results/stage2/string_fpr.csv")
     args = ap.parse_args()
     analysis = ROOT / args.analysis
+    prerequisites = [
+        (analysis / "run_level_winners.csv", "python -m src.analysis.run_level"),
+        (analysis / "event_timing.csv", "python -m src.analysis.run_level"),
+        (analysis / "masking_outcomes.csv", "python -m src.analysis.masking_outcomes"),
+        (analysis / "lowshare_outcomes.csv", "python -m src.analysis.lowshare_outcomes"),
+        (ROOT / args.string_fpr, "python -m src.audit.string_fpr"),
+    ]
+    for path, command in prerequisites:
+        if not path.is_file():
+            ap.exit(2, f"missing {display_path(path)}; run {command} first\n")
     s = pd.read_csv(ROOT / args.string_fpr)
     fpr = {(j, fam): v for j, fam, v in zip(s["judge"], s["family"], s["fpr"])}
     table = winners(analysis)

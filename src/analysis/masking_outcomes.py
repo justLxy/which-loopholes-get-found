@@ -111,8 +111,14 @@ def main():
     ap.add_argument("--plan", default=str(masking.PLAN))
     args = ap.parse_args()
     out, results = ROOT / args.analysis, ROOT / args.masking
+    path = out / "run_level_winners.csv"
+    if not path.is_file():
+        ap.exit(2, f"missing {display_path(path)}; run python -m src.analysis.run_level first\n")
     cfg, runs = masking.load_plan(args.plan)
-    predictions = pd.read_csv(ROOT / cfg["predictions"]).set_index("run")
+    path = ROOT / cfg["predictions"]
+    if not path.is_file():
+        ap.exit(2, f"missing {display_path(path)}; run python -m src.train.masking --predict first\n")
+    predictions = pd.read_csv(path).set_index("run")
     main_ranks = pd.read_csv(out / "run_level_winners.csv")
     main_winners = {}
     for _, r in main_ranks.iterrows():

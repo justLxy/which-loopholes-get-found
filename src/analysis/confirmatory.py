@@ -171,6 +171,10 @@ def main():
     ap.add_argument("--results", default="results/main")
     args = ap.parse_args()
     out = ROOT / args.analysis
+    for name in ("units.csv", "primary_auroc.csv", "meta_primary.json"):
+        path = out / name
+        if not path.is_file():
+            ap.exit(2, f"missing {display_path(path)}; run python -m src.analysis.primary first\n")
     proto = yaml.safe_load(queue.PROTOCOL.read_text())
     units = pd.read_csv(out / "units.csv")
     primary = pd.read_csv(out / "primary_auroc.csv")

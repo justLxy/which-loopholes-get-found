@@ -155,7 +155,10 @@ def main():
     ap.add_argument("--plan", default=str(lowshare.PLAN))
     args = ap.parse_args()
     cfg = yaml.safe_load(Path(args.plan).read_text())
-    preds = pd.read_csv(ROOT / cfg["predictions"])
+    path = ROOT / cfg["predictions"]
+    if not path.is_file():
+        ap.exit(2, f"missing {display_path(path)}; run python -m src.train.lowshare --predict first\n")
+    preds = pd.read_csv(path)
     rows = []
     for _, pred in preds.iterrows():
         run_dir = lowshare.results_dir(cfg) / pred["run"]
