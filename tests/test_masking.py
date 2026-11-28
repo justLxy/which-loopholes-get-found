@@ -75,10 +75,17 @@ def test_prediction_masks_the_family_and_reads_the_timing_fit():
                            "fpr": [0.6, 0.9, 0.3], "p_hat": [0.04, 0.005, 0.045], "risk": [0.024, 0.0045, 0.0135]})
     run = {"judge": "j", "pool": "hard", "seed": 1, "mask": "a", "tag": "mask-a", "checkpoint": "main-rot1"}
     row = masking.predict(run, scores, level=1.92, fit=(5.0, -1.0, 0.0))
-    assert (row["winner"], row["runner_up"], row["fpr_alone_winner"], row["propensity_alone_winner"]) == ("c", "b", "b", "c")
+    assert (row["winner"], row["runner_up"], row["fpr_alone_winner"], row["propensity_alone_winner"]) == (
+        "c",
+        "b",
+        "b",
+        "c",
+    )
     assert row["winner_exposure"] == pytest.approx(256 * 0.0135)
     assert row["event_predicted"] and row["step"] == pytest.approx(math.exp(5) / (256 * 0.0135))
-    low = masking.predict({**run, "mask": "c"}, scores.assign(risk=[0.001, 0.001, 0.0135]), level=1.92, fit=(5.0, -1.0, 0.0))
+    low = masking.predict(
+        {**run, "mask": "c"}, scores.assign(risk=[0.001, 0.001, 0.0135]), level=1.92, fit=(5.0, -1.0, 0.0)
+    )
     assert not low["event_predicted"]
 
 
@@ -92,11 +99,16 @@ def test_plan_runs_extend_the_main_run_command():
     assert f"runs/sft/main-rot{run['seed']}/model" in cmd and f"mask-{run['mask']}" in cmd
     for r in runs:
         assert masking.original_scores(cfg, r).exists()
-        assert masking.committed_scores(cfg, r) == ROOT / "results" / "masking" / f"sft-{r['checkpoint']}" / "risk_scores.csv"
+        assert (
+            masking.committed_scores(cfg, r)
+            == ROOT / "results" / "masking" / f"sft-{r['checkpoint']}" / "risk_scores.csv"
+        )
     assert [c["name"] for c in masking.checkpoints_of(runs)] == ["main-rot1", "main-rot2"]
 
 
-@pytest.mark.skipif(not (ROOT / "results" / "analysis" / "event_timing.csv").exists(), reason="run src.analysis.run_level")
+@pytest.mark.skipif(
+    not (ROOT / "results" / "analysis" / "event_timing.csv").exists(), reason="run src.analysis.run_level"
+)
 def test_predictions_of_the_plan_separate_exposure_from_fpr_alone():
     cfg, runs = masking.load_plan()
     fit = masking.timing_fit(ROOT / cfg["timing_fit"])

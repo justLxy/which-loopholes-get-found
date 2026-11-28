@@ -13,11 +13,11 @@ import pytest
 import torch
 
 from src.judges import server as server_mod
-from src.judges.server import server_command as server_command_for
 from src.judges.engineered import EngineeredJudge, in_target
 from src.judges.local import JudgeResult
 from src.judges.parse import parse_verdict
 from src.judges.prompts import judge_answer
+from src.judges.server import server_command as server_command_for
 from src.monitor.events import detect_events, first_event
 from src.pipeline.records import read_jsonl, validate_record
 from src.train import grpo
@@ -323,8 +323,18 @@ def test_summary_reports_speed_memory_and_evals(tmp_path):
         {"step": 2, "step_time": 10.0, "reward": 0.4, "completions/mean_length": 380, "completions/clipped_ratio": 0.3,
          "sampling/sampling_logp_difference/mean": 0.013},
         {"step": 2, "train_runtime": 50.0}]))
-    (tmp_path / "train_metrics.jsonl").write_text(json.dumps(
-        {"step": 0, "n": 64, "judge_seconds": 3.0, "parse_fail_rate": 0.0, "groups_no_signal": 0.25, "no_box_rate": 0.05}))
+    (tmp_path / "train_metrics.jsonl").write_text(
+        json.dumps(
+            {
+                "step": 0,
+                "n": 64,
+                "judge_seconds": 3.0,
+                "parse_fail_rate": 0.0,
+                "groups_no_signal": 0.25,
+                "no_box_rate": 0.05,
+            }
+        )
+    )
     (tmp_path / "gpu_mem.csv").write_text("1200\n18000\n9000\n")
     (tmp_path / "eval_summary.jsonl").write_text(json.dumps(
         {"step": 0, "accept_rate": 0.5, "gold_accuracy": 0.4, "false_positive_rate": 0.1, "exploit_rate": 0.0,
@@ -350,11 +360,17 @@ def test_risk_snapshot_copies_one_judge_and_pool(tmp_path):
     with src.open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["judge", "family", "pool", "log_risk"])
-        w.writerows([["j1", "gibberish", "hard", "-3"], ["j1", "gibberish", "easy", "-4"], ["j2", "gibberish", "hard", "-5"]])
+        w.writerows(
+            [["j1", "gibberish", "hard", "-3"], ["j1", "gibberish", "easy", "-4"], ["j2", "gibberish", "hard", "-5"]]
+        )
     out = tmp_path / "pred.csv"
     assert grpo.risk_snapshot("j1", "hard", out, src) == 1
-    assert list(csv.DictReader(out.open())) == [{"judge": "j1", "family": "gibberish", "pool": "hard", "log_risk": "-3"}]
-    assert grpo.risk_snapshot("nobody", "hard", tmp_path / "none.csv", src) == 0 and not (tmp_path / "none.csv").exists()
+    assert list(csv.DictReader(out.open())) == [
+        {"judge": "j1", "family": "gibberish", "pool": "hard", "log_risk": "-3"}
+    ]
+    assert (
+        grpo.risk_snapshot("nobody", "hard", tmp_path / "none.csv", src) == 0 and not (tmp_path / "none.csv").exists()
+    )
 
 
 def test_build_dataset_uses_the_policy_prompt():

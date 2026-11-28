@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
-from figures.style import OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, ACCENT_TINT, save, setup
+from figures.style import ACCENT_TINT, OKABE, SCORE_COLORS, SCORE_LABELS, TEXT, save, setup
 from src.paths import ROOT
 from src.train.seed_data import tier_shares
 
@@ -225,7 +225,9 @@ def strip(bg):
 def main():
     setup()
     units = pd.read_csv(ROOT / "results" / "analysis" / "units.csv")
-    fpr = pd.read_csv(ROOT / "results" / "stage2" / "string_fpr.csv").query("judge == @JUDGE").set_index("family")["fpr"]
+    fpr = (
+        pd.read_csv(ROOT / "results" / "stage2" / "string_fpr.csv").query("judge == @JUDGE").set_index("family")["fpr"]
+    )
     fig = plt.figure(figsize=(TEXT, H))
     bg = fig.add_axes([0, 0, 1, 1])
     bg.set_xlim(0, TEXT)

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from figures.style import JUDGE_NAMES, OKABE, TEXT, ACCENT, save, setup
+from figures.style import ACCENT, OKABE, TEXT, save, setup
 from src.analysis.stats import rewarded_advantage, wilson_interval
 from src.paths import ROOT
 

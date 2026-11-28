@@ -6,9 +6,19 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analysis.run_level import (event_timing, level_check, mcnemar_top1, permutation_p, pool_acceptance,
-                                    second_events, seeded_units, step0_acceptance, timing_rows, winner_ranks,
-                                    with_difficulty)
+from src.analysis.run_level import (
+    event_timing,
+    level_check,
+    mcnemar_top1,
+    permutation_p,
+    pool_acceptance,
+    second_events,
+    seeded_units,
+    step0_acceptance,
+    timing_rows,
+    winner_ranks,
+    with_difficulty,
+)
 from src.analysis.secondary import first_events
 from src.paths import ROOT
 
@@ -33,9 +43,14 @@ def test_winner_ranks_and_mcnemar_count_only_discordant_runs():
 
 
 def test_level_comes_from_core_events_and_is_applied_to_held_out_runs():
-    rows = [unit("c", "a", 2.0 / 256, 0.5, 0.1, True, 50), unit("c", "b", 1.0 / 256, 0.5, 0.1),
-            unit("h1", "a", 3.0 / 256, 0.5, 0.1, True, 30, "held_out"), unit("h1", "b", 1.0 / 256, 0.5, 0.1, group="held_out"),
-            unit("h2", "a", 2.5 / 256, 0.5, 0.1, group="held_out"), unit("h3", "a", 1.5 / 256, 0.5, 0.1, group="held_out")]
+    rows = [
+        unit("c", "a", 2.0 / 256, 0.5, 0.1, True, 50),
+        unit("c", "b", 1.0 / 256, 0.5, 0.1),
+        unit("h1", "a", 3.0 / 256, 0.5, 0.1, True, 30, "held_out"),
+        unit("h1", "b", 1.0 / 256, 0.5, 0.1, group="held_out"),
+        unit("h2", "a", 2.5 / 256, 0.5, 0.1, group="held_out"),
+        unit("h3", "a", 1.5 / 256, 0.5, 0.1, group="held_out"),
+    ]
     out = level_check(seeded_units(pd.DataFrame(rows)))
     assert out["level"] == pytest.approx(2.0)
     assert (out["held_out_runs"], out["held_out_runs_correct"], out["held_out_runs_predicted"]) == (3, 2, 2)
@@ -46,7 +61,13 @@ def test_second_event_is_ranked_among_the_families_left():
     rows = [unit("r", "a", 0.05, 0.9, 0.05, True, 40), unit("r", "b", 0.04, 0.8, 0.05),
             unit("r", "c", 0.03, 0.9, 0.03, True, 70)]
     out = second_events(seeded_units(pd.DataFrame(rows)), {"r": (40, "a")})
-    assert out.loc[0, ["second", "second_step", "families_left", "rank_exposure", "rank_fpr"]].tolist() == ["c", 70, 2, 2, 1]
+    assert out.loc[0, ["second", "second_step", "families_left", "rank_exposure", "rank_fpr"]].tolist() == [
+        "c",
+        70,
+        2,
+        2,
+        1,
+    ]
 
 
 def test_event_time_inverse_to_exposure_has_log_slope_minus_one():
@@ -82,7 +103,13 @@ def test_step0_acceptance_and_pool_acceptance_read_the_run_logs(tmp_path):
     assert step0_acceptance(["rh"], tmp_path) == {"rh": 0.2}
     units = pd.DataFrame([unit("rh", "a", 0.1, 0.4, 0.2, pool="hard"), unit("re", "a", 0.1, 0.4, 0.2, pool="easy")])
     acc = pool_acceptance(units, tmp_path, min_n=50)
-    assert acc.loc[0, ["n_hard", "n_easy", "accept_hard", "accept_easy", "audit_fpr"]].tolist() == [60, 60, 0.25, 0.5, 0.4]
+    assert acc.loc[0, ["n_hard", "n_easy", "accept_hard", "accept_easy", "audit_fpr"]].tolist() == [
+        60,
+        60,
+        0.25,
+        0.5,
+        0.4,
+    ]
 
 
 @needs_data
@@ -110,7 +137,10 @@ def test_difficulty_auroc_covers_the_three_pooled_analyses():
     from src.analysis.run_level import difficulty_auroc
     rows = []
     for run, group, judge in (("c1", "core", "a"), ("c2", "core", "pc"), ("h1", "held_out", "b")):
-        rows += [unit(run, "w", 0.05, 0.6, 0.1, True, 40, group, judge), unit(run, "l", 0.01, 0.1, 0.1, False, 300, group, judge)]
+        rows += [
+            unit(run, "w", 0.05, 0.6, 0.1, True, 40, group, judge),
+            unit(run, "l", 0.01, 0.1, 0.1, False, 300, group, judge),
+        ]
     u = seeded_units(pd.DataFrame(rows)).assign(difficulty=lambda d: d["fpr"] * d["p_hat"])
     out = difficulty_auroc(u, n_boot=200, seed=0, positive_control="pc").set_index("analysis")
     assert list(out.index) == ["core pooled", "core pooled without the positive control", "held-out pooled"]

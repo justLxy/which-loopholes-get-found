@@ -25,7 +25,7 @@ def load_dataset(path):
     return Dataset.from_list([{"prompt": r["prompt"], "completion": r["completion"]} for r in rows]), rows
 
 
-def main():
+def main():  # pragma: no cover - real-model training entry point
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--name", required=True)
     ap.add_argument("--config", default=str(CONFIG))

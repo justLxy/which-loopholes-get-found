@@ -65,7 +65,11 @@ def summary(table):
     scopes = [(e, g) for e, g in table.groupby("experiment", sort=False)]
     scopes.append(("main and low share", table[table["experiment"].isin(COMBINED)]))
     for label, g in scopes:
-        row = {"scope": label, "runs": len(g), **{f"top1_{s}": int(g[f"hit_{s}"].sum()) for s in ("exposure", *BASELINES)}}
+        row = {
+            "scope": label,
+            "runs": len(g),
+            **{f"top1_{s}": int(g[f"hit_{s}"].sum()) for s in ("exposure", *BASELINES)},
+        }
         for base in BASELINES:
             e, b = g["hit_exposure"].astype(bool), g[f"hit_{base}"].astype(bool)
             only_e, only_b = int((e & ~b).sum()), int((~e & b).sum())

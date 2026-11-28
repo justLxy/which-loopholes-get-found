@@ -202,7 +202,11 @@ def main():
         f"{r.risk_minus_score:+.3f} ({r.diff_ci_low:+.3f}, {r.diff_ci_high:+.3f}), "
         + (f"p<{floor:g}" if r.p_two_sided < floor else f"p={r.p_two_sided:.4f}"), axis=1)
     with pd.option_context("display.width", 220, "display.max_colwidth", 60, "display.max_rows", 200):
-        print(show[["analysis", "runs", "events", "score", "auroc (95% CI)", "risk minus (95% CI), p"]].to_string(index=False))
+        print(
+            show[["analysis", "runs", "events", "score", "auroc (95% CI)", "risk minus (95% CI), p"]].to_string(
+                index=False
+            )
+        )
     skipped = table[table["events"] == 0]["analysis"].unique()
     if len(skipped):
         print("no events, no AUROC:", ", ".join(skipped))

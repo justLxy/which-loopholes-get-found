@@ -45,7 +45,7 @@ def test_summary_reports_each_experiment_and_combines_only_main_and_low_share(an
     s = pooled_runs.summary(pooled_runs.winners(analysis)).set_index("scope")
     assert list(s.index) == ["main", "masked", "low share", "main and low share"]
     c = s.loc["main and low share"]
-    assert (c["runs"], c["top1_exposure"], c["top1_fpr"], c["top1_p_hat"]) == (4, 4, 2, 2)   # the masked run is left out
+    assert (c["runs"], c["top1_exposure"], c["top1_fpr"], c["top1_p_hat"]) == (4, 4, 2, 2)  # the masked run is left out
     assert (c["only_exposure_vs_fpr"], c["only_fpr"], c["neither_vs_fpr"]) == (2, 0, 0)
     assert c["mcnemar_p_vs_fpr"] == pytest.approx(0.5)
     assert (c["only_exposure_vs_p_hat"], c["only_p_hat"]) == (2, 0)
@@ -53,14 +53,40 @@ def test_summary_reports_each_experiment_and_combines_only_main_and_low_share(an
 
 
 def test_checkpoints_group_main_runs_by_seed_and_keep_each_low_share_run_apart():
-    table = pd.DataFrame([
-        {"experiment": "main", "run": "j1-hard-s0-main", "hit_exposure": True, "hit_fpr": True, "hit_p_hat": False},
-        {"experiment": "main", "run": "j2-hard-s0-main", "hit_exposure": True, "hit_fpr": False, "hit_p_hat": False},
-        {"experiment": "main", "run": "j1-hard-s1-main", "hit_exposure": True, "hit_fpr": True, "hit_p_hat": True},
-        {"experiment": "masked", "run": "j1-hard-s1-mask-b", "hit_exposure": False, "hit_fpr": False, "hit_p_hat": False},
-        {"experiment": "low share", "run": "j2-hard-s0-low-F1", "hit_exposure": True, "hit_fpr": False, "hit_p_hat": True},
-        {"experiment": "low share", "run": "j2-hard-s0-low-P2", "hit_exposure": True, "hit_fpr": True, "hit_p_hat": False},
-    ])
+    table = pd.DataFrame(
+        [
+            {"experiment": "main", "run": "j1-hard-s0-main", "hit_exposure": True, "hit_fpr": True, "hit_p_hat": False},
+            {
+                "experiment": "main",
+                "run": "j2-hard-s0-main",
+                "hit_exposure": True,
+                "hit_fpr": False,
+                "hit_p_hat": False,
+            },
+            {"experiment": "main", "run": "j1-hard-s1-main", "hit_exposure": True, "hit_fpr": True, "hit_p_hat": True},
+            {
+                "experiment": "masked",
+                "run": "j1-hard-s1-mask-b",
+                "hit_exposure": False,
+                "hit_fpr": False,
+                "hit_p_hat": False,
+            },
+            {
+                "experiment": "low share",
+                "run": "j2-hard-s0-low-F1",
+                "hit_exposure": True,
+                "hit_fpr": False,
+                "hit_p_hat": True,
+            },
+            {
+                "experiment": "low share",
+                "run": "j2-hard-s0-low-P2",
+                "hit_exposure": True,
+                "hit_fpr": True,
+                "hit_p_hat": False,
+            },
+        ]
+    )
     cp = pooled_runs.checkpoints(table).set_index("checkpoint")
     assert list(cp.index) == ["main-s0", "main-s1", "low-F1-s0", "low-P2-s0"]          # the masked run is left out
     assert cp.loc["main-s0", "runs"] == 2

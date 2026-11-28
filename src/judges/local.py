@@ -33,7 +33,9 @@ class LocalJudge:
         self.tokenizer = AutoTokenizer.from_pretrained(cfg["model"], padding_side="left")
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.model = AutoModelForCausalLM.from_pretrained(cfg["model"], dtype=default_dtype(self.device)).to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(cfg["model"], dtype=default_dtype(self.device)).to(
+            self.device
+        )
         self.model.eval()
 
     @torch.inference_mode()

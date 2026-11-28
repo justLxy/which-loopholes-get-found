@@ -6,8 +6,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analysis.secondary import (add_covariates, cause_specific, first_events, fit, km, loglik, risk_sets,
-                                    separating_ratios, windows)
+from src.analysis.secondary import (
+    add_covariates,
+    cause_specific,
+    first_events,
+    fit,
+    km,
+    loglik,
+    risk_sets,
+    separating_ratios,
+    windows,
+)
 from src.paths import ROOT
 
 UNITS = ROOT / "results" / "analysis" / "units.csv"

@@ -244,7 +244,9 @@ def main():
     to_sample = problems[:d["max_problems"]]
 
     def policy_factory():
-        print(f"building the clean pool: sampling the policy on {len(to_sample)} problems outside the pools", flush=True)
+        print(
+            f"building the clean pool: sampling the policy on {len(to_sample)} problems outside the pools", flush=True
+        )
         if args.local_test:
             from src.policy.local import LocalPolicy
             return LocalPolicy(cfg["policy"]["model"])

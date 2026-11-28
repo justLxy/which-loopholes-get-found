@@ -161,7 +161,9 @@ def parse_args(argv=None):
                     help="experiment B: reject this family by rule in training and evaluation (repeatable)")
     ap.add_argument("--judge-backend", default="server", choices=["server", "local"])
     ap.add_argument("--judge-url", help="override judge_server.url")
-    ap.add_argument("--save-all-rollouts", action="store_true", help="keep every training response, not only flagged ones")
+    ap.add_argument(
+        "--save-all-rollouts", action="store_true", help="keep every training response, not only flagged ones"
+    )
     ap.add_argument("--save-final", action="store_true", help="save the final policy weights")
     test = ap.add_mutually_exclusive_group()
     test.add_argument("--local-test", action="store_true", help="tiny CPU/MPS run from the local_test overrides")
@@ -171,7 +173,7 @@ def parse_args(argv=None):
     return args
 
 
-def main(argv=None):
+def main(argv=None):  # pragma: no cover - real-model training entry point
     args = parse_args(argv)
     cfg = load_grpo_config(args.config, args.profile)
     if args.policy_model:

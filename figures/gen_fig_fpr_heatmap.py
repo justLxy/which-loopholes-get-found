@@ -17,7 +17,9 @@ CORE = JUDGE_ORDER[:4]
 
 def main():
     setup()
-    fpr = pd.read_csv(ROOT / "results" / "stage2" / "string_fpr.csv").pivot(index="judge", columns="family", values="fpr")
+    fpr = pd.read_csv(ROOT / "results" / "stage2" / "string_fpr.csv").pivot(
+        index="judge", columns="family", values="fpr"
+    )
     cols = fpr.loc[CORE].mean().sort_values(ascending=False).index
     m = fpr.loc[JUDGE_ORDER, cols] * 100
     fig, ax = plt.subplots(figsize=(TEXT, 2.0))

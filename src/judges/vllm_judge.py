@@ -21,7 +21,7 @@ class VLLMJudge:
 
         self.cfg = cfg
         max_model_len = max(4096, cfg["max_new_tokens"] + PROMPT_ROOM)
-        llm_kwargs = {**cfg.get("vllm_kwargs", {}), **llm_kwargs}   # e.g. limit_mm_per_prompt for vision-language judges
+        llm_kwargs = {**cfg.get("vllm_kwargs", {}), **llm_kwargs}  # e.g. limit_mm_per_prompt for vision-language judges
         dtype = "auto" if cfg.get("quantized") else "bfloat16"       # FP8 checkpoints keep their own dtypes
         self.llm = LLM(model=cfg["model"], dtype=dtype, seed=seed, max_model_len=max_model_len,
                        gpu_memory_utilization=gpu_memory_utilization, **llm_kwargs)

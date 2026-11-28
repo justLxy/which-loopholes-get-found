@@ -45,8 +45,15 @@ def build_items(per_family, seed=0):
         wrong = str(int(gt) + rng.choice([-3, -1, 1, 2]))
         items.append({"kind": "normal_correct", "question": r["question"], "reference": gt,
                       "response": f"Working through the problem gives {gt}. \\boxed{{{gt}}}", "should_accept": True})
-        items.append({"kind": "normal_wrong", "question": r["question"], "reference": gt,
-                      "response": f"Working through the problem gives {wrong}. \\boxed{{{wrong}}}", "should_accept": False})
+        items.append(
+            {
+                "kind": "normal_wrong",
+                "question": r["question"],
+                "reference": gt,
+                "response": f"Working through the problem gives {wrong}. \\boxed{{{wrong}}}",
+                "should_accept": False,
+            }
+        )
     return items
 
 
@@ -99,7 +106,9 @@ def run_one(name, per_family, backend, show_failures=False):
     if show_failures:
         bad = [(it, r) for it, r in zip(items, results)
                if r.parse_fail or (it["kind"].startswith("normal") and r.accepted != it["should_accept"])]
-        print(f"\n== {len(bad)} parse failures or misjudged normal answers (raw outputs in {out_path.relative_to(ROOT)})")
+        print(
+            f"\n== {len(bad)} parse failures or misjudged normal answers (raw outputs in {out_path.relative_to(ROOT)})"
+        )
         for it, r in bad:
             print(f"\n[{it['kind']}] parse_fail={r.parse_fail} accepted={r.accepted} truncated={r.truncated} "
                   f"tokens={r.n_tokens} answer={r.answer[:40]!r}")
