@@ -1,6 +1,10 @@
 """The demo's callbacks on the committed data bundle (skipped without gradio or demo/data)."""
 
 import importlib.util
+import json
+import shutil
+import subprocess
+import sys
 
 import pytest
 
@@ -68,3 +72,77 @@ def test_every_run_with_a_recorded_prediction_renders(app):
 def test_an_unknown_prereg_run_gives_a_message(app):
     text, plot, responses = app.prereg_view("no such run")
     assert "python -m src.demo.build_data" in text and plot.empty and responses.empty
+
+
+# ----------------------------------------------------------------------------- start-up, options and wording
+
+def start(*args, cwd=ROOT):
+    return subprocess.run([sys.executable, *map(str, args)], capture_output=True, text=True, cwd=cwd, timeout=120)
+
+
+@pytest.mark.parametrize("case", ["missing", "empty", "incomplete"])
+def test_a_bad_data_folder_gives_one_line_and_a_non_zero_exit(tmp_path, case):
+    data = tmp_path / "data"
+    if case != "missing":
+        data.mkdir()
+    if case == "incomplete":
+        (data / "judges.json").write_text("{}")
+    out = start(APP, "--data", data)
+    assert out.returncode == 2 and out.stdout == ""
+    lines = out.stderr.strip().splitlines()
+    assert len(lines) == 1 and lines[0].startswith("error: ") and "python -m src.demo.build_data" in lines[0]
+    assert "Traceback" not in out.stderr
+
+
+def test_a_demo_folder_without_data_imports_and_exits_cleanly(tmp_path):
+    """demo/ without data/: import works, start-up explains the fix."""
+    for f in ("app.py", "store.py", "views.py"):
+        shutil.copy(APP.parent / f, tmp_path / f)
+    load = ("import importlib.util; s = importlib.util.spec_from_file_location('a', 'app.py'); "
+            "m = importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.DEFAULT)")
+    out = start("-c", load, cwd=tmp_path)
+    assert out.returncode == 0 and out.stdout.strip() == "None" and "Traceback" not in out.stderr
+    out = start(tmp_path / "app.py", cwd=tmp_path)
+    assert out.returncode == 2 and "is missing" not in out.stderr and "does not exist" in out.stderr
+    assert "Traceback" not in out.stderr
+
+
+def test_host_port_and_data_options(app, monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(app.gr.Blocks, "launch", lambda self, **kw: calls.append(kw))
+    assert app.main([]) == 0 and calls[-1] == {"server_name": "127.0.0.1", "server_port": 7860}
+    assert app.main(["--host", "0.0.0.0", "--port", "7999", "--data", str(ROOT / "demo" / "data")]) == 0
+    assert calls[-1] == {"server_name": "0.0.0.0", "server_port": 7999}
+
+
+def test_a_port_in_use_gives_a_message(app, monkeypatch, capsys):
+    def busy(self, **kw):
+        raise OSError("Cannot find empty port in range: 7860-7860")
+    monkeypatch.setattr(app.gr.Blocks, "launch", busy)
+    assert app.main([]) == 1
+    err = capsys.readouterr().err
+    assert "port in use" in err and "--port 7861" in err
+
+
+def test_risk_score_is_gone_from_the_ui(app):
+    """The UI uses the paper's term, exposure."""
+    config = json.dumps(app.build_app().get_config_file(), ensure_ascii=False)
+    assert "risk score" not in config and "exposure (256 × p̂ × FPR)" in config
+    assert "risk score" not in app.results_markdown() and "exposure (256 × p̂ × FPR)" in app.results_markdown()
+    for label in app.JUDGE_LABELS:
+        for pool in ("hard", "easy"):
+            for seeding in app.SEEDINGS:
+                assert "risk score" not in app.audit(label, pool, seeding)[2]
+
+
+def test_events_come_from_the_structured_run_files(app):
+    """The audit outcome lists every event from runs/<run>.json."""
+    s = app.DEFAULT.store
+    for _, run in s.runs.iterrows():
+        events = s.run(run["run"])["events"]
+        assert [e["family"] for e in events][:1] == ([run["first_event_family"]] if run["first_event_family"] else [])
+        label = next(k for k, v in app.JUDGE_LABELS.items() if v == run["judge"])
+        seeding = next(k for k, v in app.SEEDINGS.items() if v == run["checkpoint"])
+        text = app.audit(label, run["pool"], seeding)[2]
+        for e in events:
+            assert f"**{e['family']}** was exploited from step {e['step']}:" in text
